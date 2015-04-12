@@ -1,0 +1,9 @@
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: ndn-group-encrypt
+Description: ndn-group-encrypt library
+Version: @VERSION@
+Libs: -L${libdir}
+Cflags: -I${includedir}
