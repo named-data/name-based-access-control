@@ -9,14 +9,14 @@ def build(bld):
         name='tests-main',
         features='cxx',
         source=bld.path.ant_glob(['main.cpp']),
-        use='libndn-group-encrypt',
+        use='ndn-group-encrypt',
         )
 
     unit_test = bld.program(
         target="../unit-tests",
         source=bld.path.ant_glob(['unit-tests/**/*.cpp']),
         features=['cxx', 'cxxprogram'],
-        use='libndn-group-encrypt tests-main',
+        use='ndn-group-encrypt tests-main',
         includes=['.'],
         install_path=None,
         )

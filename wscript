@@ -42,6 +42,8 @@ def options(opt):
 def configure(conf):
     conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags'])
 
+    if 'PKG_CONFIG_PATH' not in os.environ:
+        os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
                    uselib_store='NDN_CXX', mandatory=True)
 
@@ -57,7 +59,7 @@ def configure(conf):
 
 def build(bld):
     libndn_group_encrypt = bld(
-        target="libndn-group-encrypt",
+        target="ndn-group-encrypt",
         # vnum = "0.0.1",
         features=['cxx', 'cxxshlib'],
         source =  bld.path.ant_glob(['src/**/*.cpp']),
@@ -77,8 +79,7 @@ def build(bld):
         relative_trick = False,
         )
 
-    pc = bld(
-        features = "subst",
+    bld(features = "subst",
         source='ndn-group-encrypt.pc.in',
         target='ndn-group-encrypt.pc',
         install_path = '${LIBDIR}/pkgconfig',
