@@ -4,6 +4,7 @@ ndn-group-encrypt authors
 ## The primary authors are (and/or have been):
 
 * Yingdi Yu             <http://irl.cs.ucla.edu/~yingdi/>
+* Prashanth Swaminathan <prashanthsw@gmail.com>
 
 ## All project authors and contributors
 
