@@ -29,7 +29,8 @@ namespace tlv {
 enum {
   EncryptedContent = 130,
   EncryptionAlgorithm = 131,
-  EncryptedPayload = 132
+  EncryptedPayload = 132,
+  InitialVector = 133
 };
 
 enum AlgorithmTypeValue {
