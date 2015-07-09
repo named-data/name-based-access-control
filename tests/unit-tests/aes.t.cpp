@@ -63,48 +63,42 @@ BOOST_AUTO_TEST_CASE(EncryptionDecryption)
   RandomNumberGenerator rng;
   AesKeyParams params;
 
-  EncryptParams eparams(ENCRYPT_MODE_ECB_AES, PADDING_SCHEME_PKCS7, 16);
+  EncryptParams eparams(tlv::AlgorithmAesEcb, 16);
 
   DecryptKey<Aes> decryptKey(std::move(Buffer(key, sizeof(key))));
   EncryptKey<Aes> encryptKey = Aes::deriveEncryptKey(decryptKey.getKeyBits());
 
-  Buffer plainBuf(plaintext, sizeof(plaintext));
+  // check if loading key and key derivation
+  BOOST_CHECK_EQUAL_COLLECTIONS(encryptKey.getKeyBits().begin(), encryptKey.getKeyBits().end(), key, key + sizeof(key));
+  BOOST_CHECK_EQUAL_COLLECTIONS(decryptKey.getKeyBits().begin(), decryptKey.getKeyBits().end(), key, key + sizeof(key));
 
-  Buffer cipherBuf = Aes::encrypt(encryptKey.getKeyBits(), plainBuf, eparams);
-  BOOST_CHECK_EQUAL_COLLECTIONS(cipherBuf.begin(),
-                                cipherBuf.end(),
-                                ciphertext_ecb,
-                                ciphertext_ecb + sizeof(ciphertext_ecb));
+  // encrypt data in AES_ECB
+  Buffer cipherBuf = Aes::encrypt(key, sizeof(key), plaintext, sizeof(plaintext), eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(cipherBuf.begin(), cipherBuf.end(),
+                                ciphertext_ecb, ciphertext_ecb + sizeof(ciphertext_ecb));
 
-  Buffer recvBuf = Aes::decrypt(decryptKey.getKeyBits(), cipherBuf, eparams);
-  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(),
-                                recvBuf.end(),
-                                plaintext,
-                                plaintext + sizeof(plaintext));
+  // decrypt data in AES_ECB
+  Buffer recvBuf = Aes::decrypt(key, sizeof(key), cipherBuf.buf(), cipherBuf.size(), eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(), recvBuf.end(),
+                                plaintext, plaintext + sizeof(plaintext));
 
-  eparams.setEncryptMode(ENCRYPT_MODE_CBC_AES);
+  // encrypt/decrypt data in AES_CBC with auto-generated IV
+  eparams.setAlgorithmType(tlv::AlgorithmAesCbc);
+  cipherBuf = Aes::encrypt(key, sizeof(key), plaintext, sizeof(plaintext), eparams);
+  recvBuf = Aes::decrypt(key, sizeof(key), cipherBuf.buf(), cipherBuf.size(), eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(), recvBuf.end(),
+                                plaintext, plaintext + sizeof(plaintext));
 
-  cipherBuf = Aes::encrypt(encryptKey.getKeyBits(), plainBuf, eparams);
-  recvBuf = Aes::decrypt(decryptKey.getKeyBits(), cipherBuf, eparams);
-  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(),
-                                recvBuf.end(),
-                                plaintext,
-                                plaintext + sizeof(plaintext));
+  // encrypt data in AES_CBC with specified IV
+  eparams.setIV(initvector, 16);
+  cipherBuf = Aes::encrypt(key, sizeof(key), plaintext, sizeof(plaintext), eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(cipherBuf.begin(), cipherBuf.end(),
+                                ciphertext_cbc_iv, ciphertext_cbc_iv + sizeof(ciphertext_cbc_iv));
 
-  Buffer iv(initvector, 16);
-  eparams.setIV(iv);
-
-  cipherBuf = Aes::encrypt(encryptKey.getKeyBits(), plainBuf, eparams);
-  BOOST_CHECK_EQUAL_COLLECTIONS(cipherBuf.begin(),
-                                cipherBuf.end(),
-                                ciphertext_cbc_iv,
-                                ciphertext_cbc_iv + sizeof(ciphertext_cbc_iv));
-
-  recvBuf = Aes::decrypt(decryptKey.getKeyBits(), cipherBuf, eparams);
-  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(),
-                                recvBuf.end(),
-                                plaintext,
-                                plaintext + sizeof(plaintext));
+  // decrypt data in AES_CBC with specified IV
+  recvBuf = Aes::decrypt(key, sizeof(key), cipherBuf.buf(), cipherBuf.size(), eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(recvBuf.begin(), recvBuf.end(),
+                                plaintext, plaintext + sizeof(plaintext));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

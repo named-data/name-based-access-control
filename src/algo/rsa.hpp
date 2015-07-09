@@ -21,11 +21,9 @@
 #define NDN_GEP_ALGO_RSA_HPP
 
 #include <ndn-cxx/security/key-params.hpp>
-
 #include "random-number-generator.hpp"
 #include "algo/encrypt-params.hpp"
 #include "decrypt-key.hpp"
-#include "error.hpp"
 
 namespace ndn {
 namespace gep {
@@ -41,10 +39,14 @@ public:
   deriveEncryptKey(const Buffer& keyBits);
 
   static Buffer
-  decrypt(const Buffer& keyBits, const Buffer& encryptedData, const EncryptParams& params);
+  decrypt(const uint8_t* key, size_t keyLen,
+          const uint8_t* payload, size_t payloadLen,
+          const EncryptParams& params);
 
   static Buffer
-  encrypt(const Buffer& keyBits, const Buffer& plainData, const EncryptParams& params);
+  encrypt(const uint8_t* key, size_t keyLen,
+          const uint8_t* payload, size_t payloadLen,
+          const EncryptParams& params);
 };
 
 typedef DecryptKey<Rsa> RsaPrivateKey;

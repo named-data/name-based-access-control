@@ -48,8 +48,10 @@ enum {
 };
 
 enum AlgorithmTypeValue {
-  AlgorithmSha256WithRsa = 0,
-  AlgorithmSha256WithEcdsa = 1
+  AlgorithmAesEcb = 0,
+  AlgorithmAesCbc = 1,
+  AlgorithmRsaPkcs = 2,
+  AlgorithmRsaOaep = 3
 };
 
 } // namespace tlv

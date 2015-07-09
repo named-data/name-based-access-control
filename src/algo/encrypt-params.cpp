@@ -24,9 +24,8 @@ namespace ndn {
 namespace gep {
 namespace algo {
 
-EncryptParams::EncryptParams(EncryptionMode encryptMode, PaddingScheme paddingScheme, uint8_t ivLength = 0)
-  : m_encryptMode(encryptMode)
-  , m_paddingScheme(paddingScheme)
+EncryptParams::EncryptParams(tlv::AlgorithmTypeValue algorithm, uint8_t ivLength)
+  : m_algo(algorithm)
 {
   if (ivLength != 0){
     RandomNumberGenerator rng;
@@ -36,21 +35,15 @@ EncryptParams::EncryptParams(EncryptionMode encryptMode, PaddingScheme paddingSc
 }
 
 void
-EncryptParams::setIV(const Buffer& iv)
+EncryptParams::setIV(const uint8_t* iv, size_t ivLen)
 {
-  m_iv = iv;
+  m_iv = Buffer(iv, ivLen);
 }
 
 void
-EncryptParams::setEncryptMode(const EncryptionMode& encryptMode)
+EncryptParams::setAlgorithmType(tlv::AlgorithmTypeValue algorithm)
 {
-  m_encryptMode = encryptMode;
-}
-
-void
-EncryptParams::setPaddingScheme(const PaddingScheme& paddingScheme)
-{
-  m_paddingScheme = paddingScheme;
+  m_algo = algorithm;
 }
 
 Buffer
@@ -59,16 +52,10 @@ EncryptParams::getIV() const
   return m_iv;
 }
 
-EncryptionMode
-EncryptParams::getEncryptMode() const
+tlv::AlgorithmTypeValue
+EncryptParams::getAlgorithmType() const
 {
-  return m_encryptMode;
-}
-
-PaddingScheme
-EncryptParams::getPaddingScheme() const
-{
-  return m_paddingScheme;
+  return m_algo;
 }
 
 } // namespace algo

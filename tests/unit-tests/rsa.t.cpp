@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(EncryptionDecryption)
 {
   RandomNumberGenerator rng;
   RsaKeyParams params;
-  EncryptParams eparams(ENCRYPT_MODE_RSA, PADDING_SCHEME_OAEP_SHA, 0);
+  EncryptParams eparams(tlv::AlgorithmRsaOaep);
 
   OBufferStream privateKeyBuffer, publicKeyBuffer;
   StringSource privPipe(privateKey, true,
@@ -93,30 +93,33 @@ BOOST_AUTO_TEST_CASE(EncryptionDecryption)
   DecryptKey<Rsa> decryptKey(std::move(*(privateKeyBuffer.buf())));
   EncryptKey<Rsa> encryptKey = Rsa::deriveEncryptKey(decryptKey.getKeyBits());
 
-  Buffer encodedPublic = *(publicKeyBuffer.buf());
-  Buffer derivedPublicKey = encryptKey.getKeyBits();
+  const Buffer& encodedPublicKey = *(publicKeyBuffer.buf());
+  const Buffer& derivedPublicKey = encryptKey.getKeyBits();
+  const Buffer& encodedPrivateKey = *(privateKeyBuffer.buf());
+  const Buffer& derivedPrivateKey = decryptKey.getKeyBits();
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(encodedPublic.begin(),
-                                encodedPublic.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(encodedPublicKey.begin(),
+                                encodedPublicKey.end(),
                                 derivedPublicKey.begin(),
                                 derivedPublicKey.end());
 
-  Buffer plainBuf(plaintext, sizeof(plaintext));
-  Buffer encryptBuf = Rsa::encrypt(encryptKey.getKeyBits(), plainBuf, eparams);
-  Buffer recvBuf = Rsa::decrypt(decryptKey.getKeyBits(), encryptBuf, eparams);
+  const Buffer& encryptBuf = Rsa::encrypt(encodedPublicKey.buf(), encodedPublicKey.size(),
+                                          plaintext, sizeof(plaintext),
+                                          eparams);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(plaintext,
-                                plaintext + sizeof(plaintext),
-                                recvBuf.begin(),
-                                recvBuf.end());
+  const Buffer& recvBuf = Rsa::decrypt(encodedPrivateKey.buf(), encodedPrivateKey.size(),
+                                       encryptBuf.buf(), encryptBuf.size(),
+                                       eparams);
 
-  Buffer cipherBuf(ciphertext, sizeof(ciphertext));
-  Buffer convBuf = Rsa::decrypt(decryptKey.getKeyBits(), cipherBuf, eparams);
+  BOOST_CHECK_EQUAL_COLLECTIONS(plaintext, plaintext + sizeof(plaintext),
+                                recvBuf.begin(), recvBuf.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(plaintext,
-                                plaintext + sizeof(plaintext),
-                                convBuf.begin(),
-                                convBuf.end());
+  const Buffer& convBuf = Rsa::decrypt(derivedPrivateKey.buf(), derivedPrivateKey.size(),
+                                       ciphertext, sizeof(ciphertext),
+                                       eparams);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(plaintext, plaintext + sizeof(plaintext),
+                                convBuf.begin(), convBuf.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

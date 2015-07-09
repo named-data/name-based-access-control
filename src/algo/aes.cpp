@@ -19,6 +19,7 @@
 
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include "aes.hpp"
+#include "error.hpp"
 
 namespace ndn {
 namespace gep {
@@ -26,8 +27,14 @@ namespace algo {
 
 using namespace CryptoPP;
 
-Buffer
-crypt(CipherModeBase* cipher, const Buffer& data);
+static Buffer
+transform(CipherModeBase* cipher, const uint8_t* data, size_t dataLen)
+{
+  OBufferStream obuf;
+  StringSource pipe(data, dataLen, true,
+                    new StreamTransformationFilter(*cipher, new FileSink(obuf)));
+  return *(obuf.buf());
+}
 
 DecryptKey<Aes>
 Aes::generateKey(RandomNumberGenerator& rng, AesKeyParams& params)
@@ -48,62 +55,49 @@ Aes::deriveEncryptKey(const Buffer& keyBits)
 }
 
 Buffer
-Aes::decrypt(const Buffer& keyBits, const Buffer& encryptedData, const EncryptParams& params)
+Aes::decrypt(const uint8_t* key, size_t keyLen,
+             const uint8_t* payload, size_t payloadLen,
+             const EncryptParams& params)
 {
-  switch (params.getEncryptMode()) {
-  case ENCRYPT_MODE_ECB_AES:
-    {
-      ECB_Mode<AES>::Decryption ecbDecryption(keyBits.get(), keyBits.size());
-      return crypt(&ecbDecryption, encryptedData);
+  switch (params.getAlgorithmType()) {
+    case tlv::AlgorithmAesEcb: {
+      ECB_Mode<AES>::Decryption ecbDecryption(key, keyLen);
+      return transform(&ecbDecryption, payload, payloadLen);
     }
-
-  case ENCRYPT_MODE_CBC_AES:
-    {
-      Buffer initVector = params.getIV();
+    case tlv::AlgorithmAesCbc: {
+      const Buffer& initVector = params.getIV();
       if (initVector.size() != static_cast<size_t>(AES::BLOCKSIZE))
         throw Error("incorrect initial vector size");
 
-      CBC_Mode<AES>::Decryption cbcDecryption(keyBits.get(), keyBits.size(), initVector.get());
-      return crypt(&cbcDecryption, encryptedData);
+      CBC_Mode<AES>::Decryption cbcDecryption(key, keyLen, initVector.get());
+      return transform(&cbcDecryption, payload, payloadLen);
     }
-
-  default:
-    throw Error("unsupported encryption mode");
+    default:
+      throw Error("unsupported encryption mode");
   }
 }
 
 Buffer
-Aes::encrypt(const Buffer& keyBits, const Buffer& plainData, const EncryptParams& params)
+Aes::encrypt(const uint8_t* key, size_t keyLen,
+             const uint8_t* payload, size_t payloadLen,
+             const EncryptParams& params)
 {
-  switch (params.getEncryptMode()) {
-  case ENCRYPT_MODE_ECB_AES:
-    {
-      ECB_Mode<AES>::Encryption ecbEncryption(keyBits.get(), keyBits.size());
-      return crypt(&ecbEncryption, plainData);
+  switch (params.getAlgorithmType()) {
+    case tlv::AlgorithmAesEcb: {
+      ECB_Mode<AES>::Encryption ecbEncryption(key, keyLen);
+      return transform(&ecbEncryption, payload, payloadLen);
     }
-
-  case ENCRYPT_MODE_CBC_AES:
-    {
-      Buffer initVector = params.getIV();
+    case tlv::AlgorithmAesCbc: {
+      const Buffer& initVector = params.getIV();
       if (initVector.size() != static_cast<size_t>(AES::BLOCKSIZE))
         throw Error("incorrect initial vector size");
 
-      CBC_Mode<AES>::Encryption cbcEncryption(keyBits.get(), keyBits.size(), initVector.get());
-      return crypt(&cbcEncryption, plainData);
+      CBC_Mode<AES>::Encryption cbcEncryption(key, keyLen, initVector.get());
+      return transform(&cbcEncryption, payload, payloadLen);
     }
-
-  default:
-    throw Error("unsupported encryption mode");
+    default:
+      throw Error("unsupported encryption mode");
   }
-}
-
-Buffer
-crypt(CipherModeBase* cipher, const Buffer& data)
-{
-  OBufferStream obuf;
-  StringSource pipe(data.get(), data.size(), true,
-                    new StreamTransformationFilter(*cipher, new FileSink(obuf)));
-  return *(obuf.buf());
 }
 
 } // namespace algo

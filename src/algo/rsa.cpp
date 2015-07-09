@@ -19,6 +19,7 @@
 
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include "rsa.hpp"
+#include "error.hpp"
 
 namespace ndn {
 namespace gep {
@@ -26,8 +27,15 @@ namespace algo {
 
 using namespace CryptoPP;
 
-Buffer
-crypt(SimpleProxyFilter* filter, const Buffer& data);
+static Buffer
+transform(SimpleProxyFilter* filter, const uint8_t* data, size_t dataLen)
+{
+  OBufferStream obuf;
+  filter->Attach(new FileSink(obuf));
+
+  StringSource pipe(data, dataLen, true, filter);
+  return *(obuf.buf());
+}
 
 DecryptKey<Rsa>
 Rsa::generateKey(RandomNumberGenerator& rng, RsaKeyParams& params)
@@ -61,73 +69,59 @@ Rsa::deriveEncryptKey(const Buffer& keyBits)
 }
 
 Buffer
-Rsa::decrypt(const Buffer& keyBits, const Buffer& encryptedData, const EncryptParams& params)
+Rsa::decrypt(const uint8_t* key, size_t keyLen,
+             const uint8_t* payload, size_t payloadLen,
+             const EncryptParams& params)
 {
   AutoSeededRandomPool rng;
   RSA::PrivateKey privateKey;
 
   ByteQueue keyQueue;
-  keyQueue.LazyPut(keyBits.data(), keyBits.size());
+  keyQueue.LazyPut(key, keyLen);
   privateKey.Load(keyQueue);
 
-  switch (params.getPaddingScheme()) {
-  case PADDING_SCHEME_PKCS1v15:
-    {
+  switch (params.getAlgorithmType()) {
+    case tlv::AlgorithmRsaPkcs: {
       RSAES_PKCS1v15_Decryptor decryptor_pkcs1v15(privateKey);
       PK_DecryptorFilter* filter_pkcs1v15 = new PK_DecryptorFilter(rng, decryptor_pkcs1v15);
-      return crypt(filter_pkcs1v15, encryptedData);
+      return transform(filter_pkcs1v15, payload, payloadLen);
     }
-
-  case PADDING_SCHEME_OAEP_SHA:
-    {
+    case tlv::AlgorithmRsaOaep: {
       RSAES_OAEP_SHA_Decryptor decryptor_oaep_sha(privateKey);
       PK_DecryptorFilter* filter_oaep_sha = new PK_DecryptorFilter(rng, decryptor_oaep_sha);
-      return crypt(filter_oaep_sha, encryptedData);
+      return transform(filter_oaep_sha, payload, payloadLen);
     }
-
-  default:
-    throw Error("unsupported padding scheme");
+    default:
+      throw Error("unsupported padding scheme");
   }
 }
 
 Buffer
-Rsa::encrypt(const Buffer& keyBits, const Buffer& plainData, const EncryptParams& params)
+Rsa::encrypt(const uint8_t* key, size_t keyLen,
+             const uint8_t* payload, size_t payloadLen,
+             const EncryptParams& params)
 {
   AutoSeededRandomPool rng;
   RSA::PublicKey publicKey;
 
   ByteQueue keyQueue;
-  keyQueue.LazyPut(keyBits.data(), keyBits.size());
+  keyQueue.LazyPut(key, keyLen);
   publicKey.Load(keyQueue);
 
-  switch (params.getPaddingScheme()) {
-  case PADDING_SCHEME_PKCS1v15:
-    {
+  switch (params.getAlgorithmType()) {
+    case tlv::AlgorithmRsaPkcs: {
       RSAES_PKCS1v15_Encryptor encryptor_pkcs1v15(publicKey);
       PK_EncryptorFilter* filter_pkcs1v15 = new PK_EncryptorFilter(rng, encryptor_pkcs1v15);
-      return crypt(filter_pkcs1v15, plainData);
+      return transform(filter_pkcs1v15, payload, payloadLen);
     }
-
-  case PADDING_SCHEME_OAEP_SHA:
-    {
+    case tlv::AlgorithmRsaOaep: {
       RSAES_OAEP_SHA_Encryptor encryptor_oaep_sha(publicKey);
       PK_EncryptorFilter* filter_oaep_sha = new PK_EncryptorFilter(rng, encryptor_oaep_sha);
-      return crypt(filter_oaep_sha, plainData);
+      return transform(filter_oaep_sha, payload, payloadLen);
     }
-
-  default:
-    throw Error("unsupported padding scheme");
+    default:
+      throw Error("unsupported padding scheme");
   }
-}
-
-Buffer
-crypt(SimpleProxyFilter* filter, const Buffer& data)
-{
-  OBufferStream obuf;
-  filter->Attach(new FileSink(obuf));
-
-  StringSource pipe(data.get(), data.size(), true, filter);
-  return *(obuf.buf());
 }
 
 } // namespace algo

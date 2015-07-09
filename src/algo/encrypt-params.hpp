@@ -2,55 +2,31 @@
 #define NDN_GEP_ENCRYPT_PARAMS_HPP
 
 #include <ndn-cxx/encoding/buffer-stream.hpp>
+#include "tlv.hpp"
 
 namespace ndn {
 namespace gep {
-
-enum EncryptionMode {
-  ENCRYPT_MODE_ECB_AES,
-  ENCRYPT_MODE_CBC_AES,
-  ENCRYPT_MODE_RSA
-};
-
-enum PaddingScheme {
-  PADDING_SCHEME_PKCS7,
-  PADDING_SCHEME_PKCS1v15,
-  PADDING_SCHEME_OAEP_SHA
-};
-
 namespace algo {
 
 class EncryptParams
 {
 public:
-  EncryptParams(EncryptionMode encryptMode, PaddingScheme paddingScheme, uint8_t ivLength);
-
-  virtual
-  ~EncryptParams()
-  {
-  }
+  EncryptParams(tlv::AlgorithmTypeValue algorithm, uint8_t ivLength = 0);
 
   void
-  setIV(const Buffer& iv);
+  setIV(const uint8_t* iv, size_t ivLen);
 
   void
-  setEncryptMode(const EncryptionMode& encryptMode);
-
-  void
-  setPaddingScheme(const PaddingScheme& paddingScheme);
+  setAlgorithmType(tlv::AlgorithmTypeValue algorithm);
 
   Buffer
   getIV() const;
 
-  EncryptionMode
-  getEncryptMode() const;
-
-  PaddingScheme
-  getPaddingScheme() const;
+  tlv::AlgorithmTypeValue
+  getAlgorithmType() const;
 
 private:
-  EncryptionMode m_encryptMode;
-  PaddingScheme m_paddingScheme;
+  tlv::AlgorithmTypeValue m_algo;
   Buffer m_iv;
 };
 

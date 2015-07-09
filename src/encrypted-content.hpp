@@ -27,7 +27,8 @@ public:
   EncryptedContent();
 
   EncryptedContent(tlv::AlgorithmTypeValue type, const KeyLocator& keyLocator,
-                   ConstBufferPtr payload, ConstBufferPtr iv = nullptr);
+                   const uint8_t* payload, size_t payloadLen,
+                   const uint8_t* iv = 0, size_t ivLen = 0);
 
   explicit
   EncryptedContent(const Block& block);
@@ -54,15 +55,15 @@ public:
   getKeyLocator() const;
 
   void
-  setInitialVector(ConstBufferPtr iv);
+  setInitialVector(const uint8_t* iv, size_t ivLen);
 
-  ConstBufferPtr
+  const Buffer&
   getInitialVector() const;
 
   void
-  setPayload(ConstBufferPtr payload);
+  setPayload(const uint8_t* payload, size_t payloadLen);
 
-  ConstBufferPtr
+  const Buffer&
   getPayload() const;
 
   template<encoding::Tag TAG>
@@ -88,8 +89,8 @@ private:
   int32_t m_type;
   bool m_hasKeyLocator;
   KeyLocator m_keyLocator;
-  ConstBufferPtr m_payload;
-  ConstBufferPtr m_iv;
+  Buffer m_payload;
+  Buffer m_iv;
 
   mutable Block m_wire;
 };

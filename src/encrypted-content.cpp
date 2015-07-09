@@ -20,13 +20,15 @@ EncryptedContent::EncryptedContent()
 }
 
 EncryptedContent::EncryptedContent(tlv::AlgorithmTypeValue type, const KeyLocator& keyLocator,
-                                   ConstBufferPtr payload, ConstBufferPtr iv)
+                                   const uint8_t* payload, size_t payloadLen,
+                                   const uint8_t* iv, size_t ivLen)
   : m_type(type)
   , m_hasKeyLocator(true)
   , m_keyLocator(keyLocator)
-  , m_payload(payload)
-  , m_iv(iv)
+  , m_payload(payload, payloadLen)
 {
+  if (iv != nullptr && ivLen != 0)
+    m_iv = Buffer(iv, ivLen);
 }
 
 EncryptedContent::EncryptedContent(const Block& block)
@@ -59,26 +61,26 @@ EncryptedContent::getKeyLocator() const
 }
 
 void
-EncryptedContent::setInitialVector(ConstBufferPtr iv)
+EncryptedContent::setInitialVector(const uint8_t* iv, size_t ivLen)
 {
   m_wire.reset();
-  m_iv = iv;
+  m_iv = Buffer(iv, ivLen);
 }
 
-ConstBufferPtr
+const Buffer&
 EncryptedContent::getInitialVector() const
 {
   return m_iv;
 }
 
 void
-EncryptedContent::setPayload(ConstBufferPtr payload)
+EncryptedContent::setPayload(const uint8_t* payload, size_t payloadLen)
 {
   m_wire.reset();
-  m_payload = payload;
+  m_payload = Buffer(payload, payloadLen);
 }
 
-ConstBufferPtr
+const Buffer&
 EncryptedContent::getPayload() const
 {
   return m_payload;
@@ -90,13 +92,14 @@ EncryptedContent::wireEncode(EncodingImpl<TAG>& block) const
 {
   size_t totalLength = 0;
 
-  if (m_payload != nullptr)
-    totalLength += block.prependByteArrayBlock(tlv::EncryptedPayload, m_payload->buf(), m_payload->size());
+  if (m_payload.size() != 0)
+    totalLength += block.prependByteArrayBlock(tlv::EncryptedPayload, m_payload.buf(), m_payload.size());
   else
     throw Error("EncryptedContent does not have a payload");
 
-  if (m_iv != nullptr)
-    totalLength += block.prependByteArrayBlock(tlv::InitialVector, m_iv->buf(), m_iv->size());
+  if (m_iv.size() != 0) {
+    totalLength += block.prependByteArrayBlock(tlv::InitialVector, m_iv.buf(), m_iv.size());
+  }
 
   if (m_type != -1)
     totalLength += prependNonNegativeIntegerBlock(block, tlv::EncryptionAlgorithm, m_type);
@@ -162,14 +165,14 @@ EncryptedContent::wireDecode(const Block& wire)
     throw Error("EncryptedContent does not have encryption algorithm");
 
   if (it != m_wire.elements_end() && it->type() == tlv::InitialVector) {
-    m_iv = make_shared<Buffer>(it->value_begin(), it->value_end());
+    m_iv = Buffer(it->value_begin(), it->value_end());
     it++;
   }
   else
-    m_iv = nullptr;
+    m_iv = Buffer();
 
   if (it != m_wire.elements_end() && it->type() == tlv::EncryptedPayload) {
-    m_payload = make_shared<Buffer>(it->value_begin(), it->value_end());
+    m_payload = Buffer(it->value_begin(), it->value_end());
     it++;
   }
   else
