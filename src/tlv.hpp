@@ -30,7 +30,21 @@ enum {
   EncryptedContent = 130,
   EncryptionAlgorithm = 131,
   EncryptedPayload = 132,
-  InitialVector = 133
+  InitialVector = 133,
+
+  // for repetitive interval
+  StartDate = 134,
+  EndDate = 135,
+  IntervalStartHour = 136,
+  IntervalEndHour = 137,
+  NRepeats = 138,
+  RepeatUnit = 139,
+  RepetitiveInterval = 140,
+
+  // for schedule
+  WhiteIntervalList = 141,
+  BlackIntervalList = 142,
+  Schedule = 143
 };
 
 enum AlgorithmTypeValue {
