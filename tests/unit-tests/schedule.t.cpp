@@ -35,10 +35,10 @@ BOOST_AUTO_TEST_CASE(CalculateCoveringInterval)
   Schedule schedule;
 
   RepetitiveInterval interval1(from_iso_string("20150825T000000"),
-                               from_iso_string("20150828T000000"),
+                               from_iso_string("20150827T000000"),
                                5, 10, 2, RepetitiveInterval::RepeatUnit::DAY);
   RepetitiveInterval interval2(from_iso_string("20150825T000000"),
-                               from_iso_string("20150828T000000"),
+                               from_iso_string("20150827T000000"),
                                6, 8, 1, RepetitiveInterval::RepeatUnit::DAY);
   RepetitiveInterval interval3(from_iso_string("20150827T000000"),
                                from_iso_string("20150827T000000"),
@@ -53,38 +53,51 @@ BOOST_AUTO_TEST_CASE(CalculateCoveringInterval)
   schedule.addBlackInterval(interval3);
 
   Interval resultInterval;
+  bool isPositive;
 
-  // tp1 --> 8.25 4-10
+  // tp1 --> positive 8.25 4-10
   TimeStamp tp1 = from_iso_string("20150825T063000");
-  resultInterval = schedule.getCoveringInterval(tp1);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp1);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T040000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
 
-  // tp2 --> 8.26 6-8
+  // tp2 --> positive 8.26 6-8
   TimeStamp tp2 = from_iso_string("20150826T073000");
-  resultInterval = schedule.getCoveringInterval(tp2);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp2);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150826T060000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150826T080000");
 
-  // tp3 --> 8.27 5-7
+  // tp3 --> positive 8.27 5-7
   TimeStamp tp3 = from_iso_string("20150827T053000");
-  resultInterval = schedule.getCoveringInterval(tp3);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp3);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150827T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150827T070000");
 
-  // tp4 --> 8.27 5-7
+  // tp4 --> positive 8.27 5-7
   TimeStamp tp4 = from_iso_string("20150827T063000");
-  resultInterval = schedule.getCoveringInterval(tp4);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp4);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150827T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150827T070000");
 
-  // tp5 --> No
+  // tp5 --> negative 8.27 7-8
   TimeStamp tp5 = from_iso_string("20150827T073000");
-  BOOST_CHECK_EQUAL(schedule.getCoveringInterval(tp5).isEmpty(), true);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp5);
+  BOOST_CHECK_EQUAL(isPositive, false);
+  BOOST_CHECK_EQUAL(resultInterval.isEmpty(), false);
+  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150827T070000");
+  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150827T080000");
 
-  // tp6 --> No
+  // tp6 --> negative 8.25 10-24
   TimeStamp tp6 = from_iso_string("20150825T113000");
-  BOOST_CHECK_EQUAL(schedule.getCoveringInterval(tp6).isEmpty(), true);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp6);
+  BOOST_CHECK_EQUAL(isPositive, false);
+  BOOST_CHECK_EQUAL(resultInterval.isEmpty(), false);
+  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T100000");
+  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150826T000000");
 }
 
 const uint8_t SCHEDULE[] = {
@@ -178,28 +191,19 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecode)
 
   Schedule schedule2(block);
   Interval resultInterval;
+  bool isPositive;
 
-  // tp1 --> 8.25 4-10
+  // tp1 --> positive 8.25 4-10
   TimeStamp tp1 = from_iso_string("20150825T063000");
-  resultInterval = schedule2.getCoveringInterval(tp1);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp1);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T040000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
 
-  // tp2 --> 8.26 6-8
+  // tp2 --> positive 8.26 6-8
   TimeStamp tp2 = from_iso_string("20150826T073000");
-  resultInterval = schedule2.getCoveringInterval(tp2);
-  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150826T060000");
-  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150826T080000");
-
-  Schedule schedule3(block2);
-
-  // tp1 --> 8.25 4-10
-  resultInterval = schedule3.getCoveringInterval(tp1);
-  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T040000");
-  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
-
-  // tp2 --> 8.26 6-8
-  resultInterval = schedule3.getCoveringInterval(tp2);
+  std::tie(isPositive, resultInterval) = schedule.getCoveringInterval(tp2);
+  BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150826T060000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150826T080000");
 }

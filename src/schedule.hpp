@@ -66,8 +66,10 @@ public:
    *
    * Function iterates two repetitive interval sets and find out
    * the shortest interval that allows group member to have the access to the data
+   * if there's no interval covering the @p ts, function will return false and
+   * return a negative interval
    */
-  Interval
+  std::tuple<bool, Interval>
   getCoveringInterval(const TimeStamp& ts) const;
 
 private:

@@ -19,4 +19,5 @@ def build(bld):
         use='ndn-group-encrypt tests-main',
         includes=['.'],
         install_path=None,
+	defines='TMP_TESTS_PATH=\"%s/tmp-tests\"' % bld.bldnode,
         )

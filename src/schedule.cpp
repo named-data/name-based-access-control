@@ -125,6 +125,7 @@ Schedule::wireDecode(const Block& wire)
 Schedule&
 Schedule::addWhiteInterval(const RepetitiveInterval& repetitiveInterval)
 {
+  m_wire.reset();
   m_whiteIntervalList.insert(repetitiveInterval);
   return *this;
 }
@@ -132,15 +133,20 @@ Schedule::addWhiteInterval(const RepetitiveInterval& repetitiveInterval)
 Schedule&
 Schedule::addBlackInterval(const RepetitiveInterval& repetitiveInterval)
 {
+  m_wire.reset();
   m_blackIntervalList.insert(repetitiveInterval);
   return *this;
 }
 
-Interval
+std::tuple<bool, Interval>
 Schedule::getCoveringInterval(const TimeStamp& tp) const
 {
-  Interval blackResult;
-  Interval whiteResult(true);
+  Interval blackPositiveResult(true);
+  Interval whitePositiveResult(true);
+
+  Interval blackNegativeResult;
+  Interval whiteNegativeResult;
+
   Interval tempInterval;
   bool isPositive;
 
@@ -148,28 +154,51 @@ Schedule::getCoveringInterval(const TimeStamp& tp) const
   for (const RepetitiveInterval& element : m_blackIntervalList) {
     std::tie(isPositive, tempInterval) = element.getInterval(tp);
     if (isPositive == true) {
-      // tempInterval is a black repetitive interval covering the time stamp, return empty interval
-      return Interval(true);
+      // tempInterval is covering the time stamp, || to the black negative result
+      // get the union interval of all the black interval covering the timestamp
+      // return false and the union interval
+      blackPositiveResult || tempInterval;
     }
     else {
-      // tempInterval is not covering the time stamp, && the tempInterval to the blackResult
-      if (!blackResult.isValid())
-        blackResult = tempInterval;
+      // tempInterval is not covering the time stamp, && to the black positive result
+      // get the intersection interval of all the black interval not covering the timestamp
+      // return true if white positive result is not empty, false if white positive result is empty
+      if (!blackNegativeResult.isValid())
+        blackNegativeResult = tempInterval;
       else
-        blackResult && tempInterval;
+        blackNegativeResult && tempInterval;
     }
   }
+
+  // if black positive result is not full, the result must be false
+  if (!blackPositiveResult.isEmpty())
+    return std::make_tuple(false, blackPositiveResult);
 
   // get the whiteResult
   for (const RepetitiveInterval& element : m_whiteIntervalList) {
     std::tie(isPositive, tempInterval) = element.getInterval(tp);
     if (isPositive == true) {
-      // tempInterval is a white repetitive interval covering the time stamp, || to the white result
-      whiteResult || tempInterval;
+      // tempInterval is covering the time stamp, || to the white positive result
+      // get the union interval of all the white interval covering the timestamp
+      // return true
+      whitePositiveResult || tempInterval;
+    }
+    else {
+      // tempInterval is not covering the time, && to the white negative result
+      // get the intersection of all the white interval not covering the timestamp
+      // return false if positive result is empty, return true if positive result is not empty
+      if (!whiteNegativeResult.isValid())
+        whiteNegativeResult = tempInterval;
+      else
+        whiteNegativeResult && tempInterval;
     }
   }
 
-  return whiteResult && blackResult;
+  // return false if positive result is empty, return true if positive result is not empty
+  if (!whitePositiveResult.isEmpty())
+    return std::make_tuple(true, whitePositiveResult && blackNegativeResult);
+  else
+    return std::make_tuple(false, whiteNegativeResult);
 }
 
 } // namespace gep
