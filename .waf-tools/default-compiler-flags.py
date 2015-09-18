@@ -124,6 +124,8 @@ class GccFlags(GccBasicFlags):
             flags['CXXFLAGS'] += ['-std=c++0x']
         else:
             flags['CXXFLAGS'] += ['-std=c++11']
+        if version < (4, 8, 0):
+            flags['DEFINES'] += ['_GLIBCXX_USE_NANOSLEEP'] # Bug #2499
         return flags
 
     def getDebugFlags(self, conf):
@@ -139,6 +141,8 @@ class ClangFlags(GccBasicFlags):
         flags['CXXFLAGS'] += ['-std=c++11',
                               '-Wno-error=unneeded-internal-declaration', # Bug #1588
                               '-Wno-error=deprecated-register',
+                              '-Wno-error=unused-local-typedef', # Bug #2657
+                              '-Wno-error=keyword-macro',
                               ]
         if Utils.unversioned_sys_platform() == "darwin":
             flags['CXXFLAGS'] += ['-stdlib=libc++']
