@@ -20,6 +20,7 @@
  */
 
 #include "group-manager-db.hpp"
+#include "algo/rsa.hpp"
 
 #include <sqlite3.h>
 #include <boost/filesystem.hpp>
@@ -46,7 +47,8 @@ static const std::string INITIALIZATION =
   "    member_id           INTEGER PRIMARY KEY,       \n"
   "    schedule_id         INTEGER NOT NULL,          \n"
   "    member_name         BLOB NOT NULL,             \n"
-  "    member_cert         BLOB NOT NULL,             \n"
+  "    key_name            BLOB NOT NULL,             \n"
+  "    pubkey              BLOB NOT NULL,             \n"
   "    FOREIGN KEY(schedule_id)                       \n"
   "      REFERENCES schedules(schedule_id)            \n"
   "      ON DELETE CASCADE                            \n"
@@ -155,21 +157,24 @@ GroupManagerDB::getSchedule(const std::string& name) const
   return result;
 }
 
-std::map<Name, Data>
+std::map<Name, Buffer>
 GroupManagerDB::getScheduleMembers(const std::string& name) const
 {
-  std::map<Name, Data> result;
+  std::map<Name, Buffer> result;
   Sqlite3Statement statement(m_impl->m_database,
-                             "SELECT member_name, member_cert\
+                             "SELECT key_name, pubkey\
                               FROM members JOIN schedules\
                               ON members.schedule_id=schedules.schedule_id\
                               WHERE schedule_name=?");
   statement.bind(1, name, SQLITE_TRANSIENT);
-
   result.clear();
+
+  const uint8_t* keyBytes = nullptr;
   while (statement.step() == SQLITE_ROW) {
-    result.insert(std::pair<Name, Data>(Name(statement.getBlock(0)),
-                                        Data(statement.getBlock(1))));
+    keyBytes = statement.getBlob(1);
+    const int& keyBytesSize = statement.getSize(1);
+    result.insert(std::pair<Name, Buffer>(Name(statement.getBlock(0)),
+                                          Buffer(keyBytes, keyBytesSize)));
   }
   return result;
 }
@@ -248,22 +253,6 @@ GroupManagerDB::listAllMembers() const
   return result;
 }
 
-Data
-GroupManagerDB::getMemberCert(const Name& identity) const
-{
-  Sqlite3Statement statement(m_impl->m_database,
-                             "SELECT member_cert FROM members WHERE member_name=?");
-  statement.bind(1, identity.wireEncode(), SQLITE_TRANSIENT);
-  Data result;
-  if (statement.step() == SQLITE_ROW) {
-    result.wireDecode(statement.getBlock(0));
-  }
-  else {
-    BOOST_THROW_EXCEPTION(Error("Cannot get the result from database"));
-  }
-  return result;
-}
-
 std::string
 GroupManagerDB::getMemberSchedule(const Name& identity) const
 {
@@ -285,21 +274,24 @@ GroupManagerDB::getMemberSchedule(const Name& identity) const
 }
 
 void
-GroupManagerDB::addMember(const std::string& scheduleName, const Data& certificate)
+GroupManagerDB::addMember(const std::string& scheduleName, const Name& keyName,
+                          const Buffer& key)
 {
   int scheduleId = m_impl->getScheduleId(scheduleName);
   if (scheduleId == -1)
     BOOST_THROW_EXCEPTION(Error("The schedule dose not exist"));
 
-  IdentityCertificate cert(certificate);
-  Name memberName = cert.getPublicKeyName().getPrefix(-1);
+  // need to be changed in the future
+  Name memberName = keyName.getPrefix(-1);
 
   Sqlite3Statement statement(m_impl->m_database,
-                             "INSERT INTO members(schedule_id, member_name, member_cert)\
-                              values (?, ?, ?)");
+                             "INSERT INTO members(schedule_id, member_name, key_name, pubkey)\
+                              values (?, ?, ?, ?)");
   statement.bind(1, scheduleId);
   statement.bind(2, memberName.wireEncode(), SQLITE_TRANSIENT);
-  statement.bind(3, certificate.wireEncode(), SQLITE_TRANSIENT);
+  statement.bind(3, keyName.wireEncode(), SQLITE_TRANSIENT);
+  statement.bind(4, key.buf(), key.size(), SQLITE_TRANSIENT);
+
   if (statement.step() != SQLITE_DONE)
     BOOST_THROW_EXCEPTION(Error("Cannot add the member to database"));
 }

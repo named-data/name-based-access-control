@@ -75,10 +75,9 @@ public:
   getSchedule(const std::string& name) const;
 
   /**
-   * @brief Get member information of a schedule with @p name.
-   * The member information include member name and certificate.
+   * @brief Get member key name and public key buffer of a schedule with @p name.
    */
-  std::map<Name, Data>
+  std::map<Name, Buffer>
   getScheduleMembers(const std::string& name) const;
 
   /**
@@ -129,14 +128,6 @@ public:
   listAllMembers() const;
 
   /**
-   * @brief Get the certificate of the member with name @p identity
-   *
-   * @throw Error if there is no member with name @p identity in database
-   */
-  Data
-  getMemberCert(const Name& identity) const;
-
-  /**
    * @brief Get the schedule name of a member with name @p identity
    *
    * @throw Error if there is no member with name @p identity in database
@@ -145,13 +136,15 @@ public:
   getMemberSchedule(const Name& identity) const;
 
   /**
-   * @brief Add a new member with @p certificate into a schedule with name @p scheduleName.
+   * @brief Add a new member with @p key of @p keyName
+   *        into a schedule with name @p scheduleName.
    *
    * @throw Error when there's no schedule named @p scheduleName
-   * @throw Error if add operation fails, e.g., a member with the same name exists
+   * @throw Error if add operation fails, e.g., the added member exists
    */
   void
-  addMember(const std::string& scheduleName, const Data& certificate);
+  addMember(const std::string& scheduleName, const Name& keyName,
+            const Buffer& key);
 
   /**
    * @brief Change the schedule of a member with name @p identity to a schedule with @p scheduleName

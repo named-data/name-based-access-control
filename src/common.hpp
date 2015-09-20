@@ -22,7 +22,7 @@
 
 #include "config.hpp"
 
-#ifdef WITH_TESTS
+#ifdef NDN_GEP_HAVE_TESTS
 #define VIRTUAL_WITH_TESTS virtual
 #define PUBLIC_WITH_TESTS_ELSE_PROTECTED public
 #define PUBLIC_WITH_TESTS_ELSE_PRIVATE public
