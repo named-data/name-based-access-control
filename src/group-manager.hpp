@@ -44,8 +44,16 @@ public:
   };
 
 public:
-  /// @brief Create group manager using @p managedNamespace
-  GroupManager(const Name& managedNamespace, const std::string& dbDir,
+  /**
+   * @brief Create group manager
+   *
+   * The namespace of group manager is /<prefix>/read/<dataType>/
+   * The group management information (including user cert, schedule) is stored in a database
+   * at @p dbDir.
+   * The group key will be an RSA key with @p paramLength bytes.
+   * The FreshnessPeriod of data packet carrying the keys will be set to @p freshPeriod.
+   */
+  GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
                const int paramLength, const int freshPeriod);
 
   /**

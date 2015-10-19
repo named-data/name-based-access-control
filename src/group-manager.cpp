@@ -28,16 +28,18 @@
 namespace ndn {
 namespace gep {
 
-static const std::string E_KEY_COMPONENT = "E-KEY";
-static const std::string D_KEY_COMPONENT = "D-KEY";
+static const name::Component E_KEY_COMPONENT("E-KEY");
+static const name::Component D_KEY_COMPONENT("D-KEY");
+static const name::Component READ_COMPONENT("read");
 
-GroupManager::GroupManager(const Name& managedNamespace, const std::string& dbDir,
+GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
                            const int paramLength, const int freshPeriod)
-  : m_namespace(managedNamespace)
+  : m_namespace(prefix)
   , m_db(dbDir)
   , m_paramLength(paramLength)
   , m_freshPeriod(freshPeriod)
 {
+  m_namespace.append(READ_COMPONENT).append(dataType);
 }
 
 std::list<Data>

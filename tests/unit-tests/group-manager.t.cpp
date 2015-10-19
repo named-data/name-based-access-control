@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(CreateDKeyData)
   // create the group manager database
   std::string dbDir = tmpPath.c_str();
   dbDir += "/manager-d-key-test.db";
-  GroupManager manager(Name("Alice-read"), dbDir, 2048, 1);
+  GroupManager manager(Name("Alice"), Name("data_type"), dbDir, 2048, 1);
 
   Block newCertBlock = cert.wireEncode();
   IdentityCertificate newCert(newCertBlock);
@@ -220,11 +220,12 @@ BOOST_AUTO_TEST_CASE(CreateEKeyData)
   dbDir += "/manager-e-key-test.db";
 
   // create group manager
-  GroupManager manager(Name("Alice-read"), dbDir, 1024, 1);
+  GroupManager manager(Name("Alice"), Name("data_type"), dbDir, 1024, 1);
   setManager(manager);
 
   Data data = manager.createEKeyData("20150825T090000", "20150825T110000", encryptKeyBuf);
-  BOOST_CHECK_EQUAL(data.getName().toUri(), "/Alice-read/E-KEY/20150825T090000/20150825T110000");
+  BOOST_CHECK_EQUAL(data.getName().toUri(),
+                    "/Alice/read/data_type/E-KEY/20150825T090000/20150825T110000");
 
   Buffer contentBuf(data.getContent().value(), data.getContent().value_size());
   BOOST_CHECK_EQUAL_COLLECTIONS(encryptKeyBuf.begin(), encryptKeyBuf.end(),
@@ -239,7 +240,7 @@ BOOST_AUTO_TEST_CASE(CalculateInterval)
   dbDir += "/manager-interval-test.db";
 
   // create group manager
-  GroupManager manager(Name("Alice-read"), dbDir, 1024, 1);
+  GroupManager manager(Name("Alice"), Name("data_type"), dbDir, 1024, 1);
   setManager(manager);
 
   std::map<Name, Buffer> memberKeys;
@@ -272,7 +273,7 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   dbDir += "/manager-group-key-test.db";
 
   // create group manager
-  GroupManager manager(Name("Alice-read"), dbDir, 1024, 1);
+  GroupManager manager(Name("Alice"), Name("data_type"), dbDir, 1024, 1);
   setManager(manager);
 
   // get data list from group manager
@@ -284,14 +285,14 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   // first data contain the group encrypt key(public key)
   std::list<Data>::iterator dataIterator = result.begin();
   BOOST_CHECK_EQUAL(dataIterator->getName().toUri(),
-                    "/Alice-read/E-KEY/20150825T090000/20150825T100000");
+                    "/Alice/read/data_type/E-KEY/20150825T090000/20150825T100000");
   EncryptKey<algo::Rsa> groupEKey(Buffer(dataIterator->getContent().value(),
                                          dataIterator->getContent().value_size()));
 
   // second data and decrypt
   dataIterator++;
   BOOST_CHECK_EQUAL(dataIterator->getName().getPrefix(-2).toUri(),
-                    "/Alice-read/D-KEY/20150825T090000/20150825T100000");
+                    "/Alice/read/data_type/D-KEY/20150825T090000/20150825T100000");
 
   //////////////////////////////////////////////////////////////////////// start decryption
   Block dataContent = dataIterator->getContent();
