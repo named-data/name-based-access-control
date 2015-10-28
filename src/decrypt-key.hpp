@@ -47,7 +47,7 @@ public:
   }
 
   const Buffer&
-  getKeyBits()
+  getKeyBits() const
   {
     return m_keyBits;
   }

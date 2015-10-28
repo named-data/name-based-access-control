@@ -31,6 +31,7 @@ namespace gep {
 static const name::Component E_KEY_COMPONENT("E-KEY");
 static const name::Component D_KEY_COMPONENT("D-KEY");
 static const name::Component READ_COMPONENT("read");
+static const name::Component FOR_COMPONENT("FOR");
 
 GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
                            const int paramLength, const int freshPeriod)
@@ -179,9 +180,9 @@ Data
 GroupManager::createEKeyData(const std::string& startTs, const std::string& endTs,
                              const Buffer& pubKeyBuf)
 {
-  Name dataName(m_namespace);
-  dataName.append(E_KEY_COMPONENT).append(startTs).append(endTs);
-  Data data(dataName);
+  Name name(m_namespace);
+  name.append(E_KEY_COMPONENT).append(startTs).append(endTs);
+  Data data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
   data.setContent(pubKeyBuf.get(), pubKeyBuf.size());
   m_keyChain.sign(data);
@@ -193,10 +194,10 @@ GroupManager::createDKeyData(const std::string& startTs, const std::string& endT
                              const Name& keyName, const Buffer& priKeyBuf,
                              const Buffer& certKey)
 {
-  Name dataName(m_namespace);
-  dataName.append(D_KEY_COMPONENT);
-  dataName.append(startTs).append(endTs).append(keyName.getPrefix(-1));
-  Data data = Data(dataName);
+  Name name(m_namespace);
+  name.append(D_KEY_COMPONENT);
+  name.append(startTs).append(endTs).append(FOR_COMPONENT).append(keyName);
+  Data data = Data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
   algo::EncryptParams eparams(tlv::AlgorithmRsaPkcs);
   algo::encryptData(data, priKeyBuf.buf(), priKeyBuf.size(), keyName,
