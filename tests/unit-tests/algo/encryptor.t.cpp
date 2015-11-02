@@ -19,7 +19,7 @@
 
 #include "random-number-generator.hpp"
 #include "encrypted-content.hpp"
-#include "encryptor.hpp"
+#include "algo/encryptor.hpp"
 #include "algo/rsa.hpp"
 #include "algo/aes.hpp"
 
@@ -137,7 +137,6 @@ public:
 typedef boost::mpl::list<TestDataAesCbc,
                          TestDataAesEcb> EncryptorAesTestInputs;
 
-
 BOOST_AUTO_TEST_CASE_TEMPLATE(ContentSymmetricEncrypt, T, EncryptorAesTestInputs)
 {
   T input;
@@ -145,6 +144,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ContentSymmetricEncrypt, T, EncryptorAesTestInputs
   Data data;
   encryptData(data, input.plainText.buf(), input.plainText.size(),
               input.keyName, input.key.buf(), input.key.size(), input.encryptParams);
+
+  BOOST_CHECK_EQUAL(data.getName(), Name("/FOR").append(input.keyName));
 
   BOOST_CHECK_EQUAL_COLLECTIONS(input.encryptedContent.begin(), input.encryptedContent.end(),
                                 data.getContent().wire(), data.getContent().wire() + data.getContent().size());
@@ -209,6 +210,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ContentAsymmetricEncryptSmall, T, EncryptorRsaTest
 
   encryptData(data, raw_content, sizeof(raw_content),
               keyName, eKey.buf(), eKey.size(), encryptParams);
+
+  BOOST_CHECK_EQUAL(data.getName(), Name("/FOR").append(keyName));
 
   Block dataContent = data.getContent();
   dataContent.parse();
@@ -283,6 +286,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ContentAsymmetricEncryptLarge, T, EncryptorRsaTest
   EncryptParams encryptParams(type.type);
   encryptData(data, large_content, sizeof(large_content),
               keyName, eKey.buf(), eKey.size(), encryptParams);
+
+  BOOST_CHECK_EQUAL(data.getName(), Name("/FOR").append(keyName));
 
   Block largeDataContent = data.getContent();
   largeDataContent.parse();

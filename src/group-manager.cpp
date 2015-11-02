@@ -20,18 +20,13 @@
  */
 
 #include "group-manager.hpp"
-#include "encryptor.hpp"
+#include "algo/encryptor.hpp"
 #include "encrypted-content.hpp"
 
 #include <map>
 
 namespace ndn {
 namespace gep {
-
-static const name::Component E_KEY_COMPONENT("E-KEY");
-static const name::Component D_KEY_COMPONENT("D-KEY");
-static const name::Component READ_COMPONENT("read");
-static const name::Component FOR_COMPONENT("FOR");
 
 GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
                            const int paramLength, const int freshPeriod)
@@ -40,7 +35,7 @@ GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::
   , m_paramLength(paramLength)
   , m_freshPeriod(freshPeriod)
 {
-  m_namespace.append(READ_COMPONENT).append(dataType);
+  m_namespace.append(NAME_COMPONENT_READ).append(dataType);
 }
 
 std::list<Data>
@@ -181,7 +176,7 @@ GroupManager::createEKeyData(const std::string& startTs, const std::string& endT
                              const Buffer& pubKeyBuf)
 {
   Name name(m_namespace);
-  name.append(E_KEY_COMPONENT).append(startTs).append(endTs);
+  name.append(NAME_COMPONENT_E_KEY).append(startTs).append(endTs);
   Data data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
   data.setContent(pubKeyBuf.get(), pubKeyBuf.size());
@@ -195,8 +190,8 @@ GroupManager::createDKeyData(const std::string& startTs, const std::string& endT
                              const Buffer& certKey)
 {
   Name name(m_namespace);
-  name.append(D_KEY_COMPONENT);
-  name.append(startTs).append(endTs).append(FOR_COMPONENT).append(keyName);
+  name.append(NAME_COMPONENT_D_KEY);
+  name.append(startTs).append(endTs);
   Data data = Data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
   algo::EncryptParams eparams(tlv::AlgorithmRsaPkcs);

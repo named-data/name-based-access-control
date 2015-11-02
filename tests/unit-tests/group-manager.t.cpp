@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(CreateEKeyData)
 
   Data data = manager.createEKeyData("20150825T090000", "20150825T110000", encryptKeyBuf);
   BOOST_CHECK_EQUAL(data.getName().toUri(),
-                    "/Alice/read/data_type/E-KEY/20150825T090000/20150825T110000");
+                    "/Alice/READ/data_type/E-KEY/20150825T090000/20150825T110000");
 
   Buffer contentBuf(data.getContent().value(), data.getContent().value_size());
   BOOST_CHECK_EQUAL_COLLECTIONS(encryptKeyBuf.begin(), encryptKeyBuf.end(),
@@ -285,14 +285,14 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   // first data contain the group encrypt key(public key)
   std::list<Data>::iterator dataIterator = result.begin();
   BOOST_CHECK_EQUAL(dataIterator->getName().toUri(),
-                    "/Alice/read/data_type/E-KEY/20150825T090000/20150825T100000");
+                    "/Alice/READ/data_type/E-KEY/20150825T090000/20150825T100000");
   EncryptKey<algo::Rsa> groupEKey(Buffer(dataIterator->getContent().value(),
                                          dataIterator->getContent().value_size()));
 
   // second data and decrypt
   dataIterator++;
   BOOST_CHECK_EQUAL(dataIterator->getName().toUri(),
-                    "/Alice/read/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberA/ksk-123");
+                    "/Alice/READ/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberA/ksk-123");
 
   //////////////////////////////////////////////////////////////////////// start decryption
   Block dataContent = dataIterator->getContent();
@@ -343,12 +343,12 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   // third data and decrypt
   dataIterator++;
   BOOST_CHECK_EQUAL(dataIterator->getName().toUri(),
-                    "/Alice/read/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberB/ksk-123");
+                    "/Alice/READ/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberB/ksk-123");
 
   // second data and decrypt
   dataIterator++;
   BOOST_CHECK_EQUAL(dataIterator->getName().toUri(),
-                    "/Alice/read/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberC/ksk-123");
+                    "/Alice/READ/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberC/ksk-123");
 
   // invalid time stamp to get group key
   TimeStamp tp2(from_iso_string("20150826T083000"));

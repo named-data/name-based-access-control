@@ -101,6 +101,14 @@ namespace name = ndn::name;
 namespace time = ndn::time;
 namespace signal = ndn::util::signal;
 
+const ndn::name::Component NAME_COMPONENT_FOR("FOR");
+const ndn::name::Component NAME_COMPONENT_READ("READ");
+const ndn::name::Component NAME_COMPONENT_SAMPLE("SAMPLE");
+const ndn::name::Component NAME_COMPONENT_ACCESS("ACCESS");
+const ndn::name::Component NAME_COMPONENT_E_KEY("E-KEY");
+const ndn::name::Component NAME_COMPONENT_D_KEY("D-KEY");
+const ndn::name::Component NAME_COMPONENT_C_KEY("C-KEY");
+
 } // namespace gep
 } // namespace ndn
 

@@ -48,10 +48,12 @@ encryptSymmetric(const uint8_t* payload, size_t payloadLen,
   KeyLocator keyLocator(keyName);
 
   switch (algType) {
-    case tlv::AlgorithmAesCbc:
     case tlv::AlgorithmAesEcb: {
+      const Buffer& encryptedPayload = Aes::encrypt(key, keyLen, payload, payloadLen, params);
+      return EncryptedContent(algType, keyLocator, encryptedPayload.buf(), encryptedPayload.size(), iv.buf(), iv.size());
+    }
+    case tlv::AlgorithmAesCbc: {
       BOOST_ASSERT(iv.size() == static_cast<size_t>(AES::BLOCKSIZE));
-
       const Buffer& encryptedPayload = Aes::encrypt(key, keyLen, payload, payloadLen, params);
       return EncryptedContent(algType, keyLocator, encryptedPayload.buf(), encryptedPayload.size(), iv.buf(), iv.size());
     }
@@ -96,6 +98,9 @@ encryptData(Data& data, const uint8_t* payload, size_t payloadLen,
             const Name& keyName, const uint8_t* key, size_t keyLen,
             const EncryptParams& params)
 {
+  Name dataName = data.getName();
+  dataName.append(NAME_COMPONENT_FOR).append(keyName);
+  data.setName(dataName);
   switch(params.getAlgorithmType()) {
     case tlv::AlgorithmAesCbc:
     case tlv::AlgorithmAesEcb: {
