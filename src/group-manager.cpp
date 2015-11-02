@@ -163,7 +163,6 @@ GroupManager::generateKeyPairs(Buffer& priKeyBuf, Buffer& pubKeyBuf) const
 {
   RandomNumberGenerator rng;
   RsaKeyParams params(m_paramLength);
-  algo::EncryptParams eparams(tlv::AlgorithmRsaPkcs);
   DecryptKey<algo::Rsa> privateKey = algo::Rsa::generateKey(rng, params);
   priKeyBuf = privateKey.getKeyBits();
   EncryptKey<algo::Rsa> publicKey = algo::Rsa::deriveEncryptKey(priKeyBuf);
@@ -194,7 +193,7 @@ GroupManager::createDKeyData(const std::string& startTs, const std::string& endT
   name.append(startTs).append(endTs);
   Data data = Data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
-  algo::EncryptParams eparams(tlv::AlgorithmRsaPkcs);
+  algo::EncryptParams eparams(tlv::AlgorithmRsaOaep);
   algo::encryptData(data, priKeyBuf.buf(), priKeyBuf.size(), keyName,
                     certKey.buf(), certKey.size(), eparams);
   m_keyChain.sign(data);

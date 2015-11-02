@@ -186,10 +186,10 @@ BOOST_AUTO_TEST_CASE(CreateDKeyData)
   BOOST_CHECK_EQUAL(nonceContent.type(), tlv::EncryptedContent);
   EncryptedContent encryptedNonce(nonceContent);
   BOOST_CHECK_EQUAL(encryptedNonce.getInitialVector().size(), 0);
-  BOOST_CHECK_EQUAL(encryptedNonce.getAlgorithmType(), tlv::AlgorithmRsaPkcs);
+  BOOST_CHECK_EQUAL(encryptedNonce.getAlgorithmType(), tlv::AlgorithmRsaOaep);
 
   const Buffer& bufferNonce = encryptedNonce.getPayload();
-  algo::EncryptParams decryptParams(tlv::AlgorithmRsaPkcs);
+  algo::EncryptParams decryptParams(tlv::AlgorithmRsaOaep);
   Buffer nonce = algo::Rsa::decrypt(decryptKeyBuf.buf(), decryptKeyBuf.size(),
                                     bufferNonce.buf(), bufferNonce.size(), decryptParams);
 
@@ -306,9 +306,9 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   BOOST_CHECK_EQUAL(nonceContent.type(), tlv::EncryptedContent);
   EncryptedContent encryptedNonce(nonceContent);
   BOOST_CHECK_EQUAL(encryptedNonce.getInitialVector().size(), 0);
-  BOOST_CHECK_EQUAL(encryptedNonce.getAlgorithmType(), tlv::AlgorithmRsaPkcs);
+  BOOST_CHECK_EQUAL(encryptedNonce.getAlgorithmType(), tlv::AlgorithmRsaOaep);
 
-  algo::EncryptParams decryptParams(tlv::AlgorithmRsaPkcs);
+  algo::EncryptParams decryptParams(tlv::AlgorithmRsaOaep);
   const Buffer& bufferNonce = encryptedNonce.getPayload();
   Buffer nonce = algo::Rsa::decrypt(decryptKeyBuf.buf(), decryptKeyBuf.size(),
                                     bufferNonce.buf(), bufferNonce.size(), decryptParams);
