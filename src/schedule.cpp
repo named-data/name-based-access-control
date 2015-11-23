@@ -28,6 +28,34 @@
 namespace ndn {
 namespace gep {
 
+/**
+ * @brief Helper functon to calculate black interval results or white interval results
+ * @p list The RepetitiveInterval list, which can be white list or the black list
+ * @p tp The timestamp
+ * @p positiveR The positive result
+ * @p negativeR The negative result
+ */
+static void
+calIntervalResult(const std::set<RepetitiveInterval>& list, const TimeStamp& ts,
+                  Interval& positiveR, Interval& negativeR)
+{
+  Interval tempInterval;
+  bool isPositive;
+
+  for (const RepetitiveInterval& element : list) {
+    std::tie(isPositive, tempInterval) = element.getInterval(ts);
+    if (isPositive == true) {
+      positiveR || tempInterval;
+    }
+    else {
+      if (!negativeR.isValid())
+        negativeR = tempInterval;
+      else
+        negativeR && tempInterval;
+    }
+  }
+}
+
 BOOST_CONCEPT_ASSERT((WireEncodable<Schedule>));
 BOOST_CONCEPT_ASSERT((WireDecodable<Schedule>));
 
@@ -139,7 +167,7 @@ Schedule::addBlackInterval(const RepetitiveInterval& repetitiveInterval)
 }
 
 std::tuple<bool, Interval>
-Schedule::getCoveringInterval(const TimeStamp& tp) const
+Schedule::getCoveringInterval(const TimeStamp& ts) const
 {
   Interval blackPositiveResult(true);
   Interval whitePositiveResult(true);
@@ -147,58 +175,38 @@ Schedule::getCoveringInterval(const TimeStamp& tp) const
   Interval blackNegativeResult;
   Interval whiteNegativeResult;
 
-  Interval tempInterval;
-  bool isPositive;
-
   // get the blackResult
-  for (const RepetitiveInterval& element : m_blackIntervalList) {
-    std::tie(isPositive, tempInterval) = element.getInterval(tp);
-    if (isPositive == true) {
-      // tempInterval is covering the time stamp, || to the black negative result
-      // get the union interval of all the black interval covering the timestamp
-      // return false and the union interval
-      blackPositiveResult || tempInterval;
-    }
-    else {
-      // tempInterval is not covering the time stamp, && to the black positive result
-      // get the intersection interval of all the black interval not covering the timestamp
-      // return true if white positive result is not empty, false if white positive result is empty
-      if (!blackNegativeResult.isValid())
-        blackNegativeResult = tempInterval;
-      else
-        blackNegativeResult && tempInterval;
-    }
-  }
+  calIntervalResult(m_blackIntervalList, ts,
+                    blackPositiveResult, blackNegativeResult);
 
-  // if black positive result is not full, the result must be false
+  // if black positive result is not empty, the result must be false
   if (!blackPositiveResult.isEmpty())
     return std::make_tuple(false, blackPositiveResult);
 
   // get the whiteResult
-  for (const RepetitiveInterval& element : m_whiteIntervalList) {
-    std::tie(isPositive, tempInterval) = element.getInterval(tp);
-    if (isPositive == true) {
-      // tempInterval is covering the time stamp, || to the white positive result
-      // get the union interval of all the white interval covering the timestamp
-      // return true
-      whitePositiveResult || tempInterval;
-    }
-    else {
-      // tempInterval is not covering the time, && to the white negative result
-      // get the intersection of all the white interval not covering the timestamp
-      // return false if positive result is empty, return true if positive result is not empty
-      if (!whiteNegativeResult.isValid())
-        whiteNegativeResult = tempInterval;
-      else
-        whiteNegativeResult && tempInterval;
-    }
+  calIntervalResult(m_whiteIntervalList, ts,
+                    whitePositiveResult, whiteNegativeResult);
+
+  if (whitePositiveResult.isEmpty() && !whiteNegativeResult.isValid()) {
+    // there is no white interval covering the timestamp
+    // return false and a 24-hour interval
+    return std::make_tuple(false, Interval(TimeStamp(ts.date(), boost::posix_time::hours(0)),
+                                           TimeStamp(ts.date(), boost::posix_time::hours(24))));
   }
 
-  // return false if positive result is empty, return true if positive result is not empty
-  if (!whitePositiveResult.isEmpty())
-    return std::make_tuple(true, whitePositiveResult && blackNegativeResult);
-  else
+  if (!whitePositiveResult.isEmpty()) {
+    // there is white interval covering the timestamp
+    // return ture and calculate the intersection
+    if (blackNegativeResult.isValid())
+      return std::make_tuple(true, whitePositiveResult && blackNegativeResult);
+    else
+      return std::make_tuple(true, whitePositiveResult);
+  }
+  else {
+    // there is no white interval covering the timestamp
+    // return false
     return std::make_tuple(false, whiteNegativeResult);
+  }
 }
 
 } // namespace gep
