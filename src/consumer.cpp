@@ -202,7 +202,9 @@ Consumer::decryptCKey(const Data& cKeyData,
     // get the D-Key Data
     Name interestName = dKeyName;
     interestName.append(NAME_COMPONENT_FOR).append(m_consumerName);
-    shared_ptr<Interest> interest = make_shared<Interest>(dKeyName);
+
+    // fix bug here in Nov.23.2015 : change dKeyName to interestName
+    shared_ptr<Interest> interest = make_shared<Interest>(interestName);
 
     // prepare callback functions
     auto onData = [=] (const Interest& dKeyInterest, const Data& dKeyData) {
