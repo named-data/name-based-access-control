@@ -46,7 +46,7 @@ const uint8_t encrypted[] = {
     0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74
 };
 
-const uint8_t encrypted_noiv[] = {
+const uint8_t encryptedNoIv[] = {
 0x82, 0x24, // EncryptedContent
   0x1c, 0x16, // KeyLocator
     0x07, 0x14, // Name
@@ -72,94 +72,91 @@ const uint8_t iv[] = {
 
 BOOST_AUTO_TEST_CASE(Constructor)
 {
+  // checking default setting.
   EncryptedContent content;
   BOOST_CHECK_EQUAL(content.getAlgorithmType(), -1);
-  BOOST_CHECK_EQUAL((content.getPayload()).size(), 0);
-  BOOST_CHECK_EQUAL((content.getInitialVector()).size(), 0);
+  BOOST_CHECK_EQUAL(content.getPayload().size(), 0);
+  BOOST_CHECK_EQUAL(content.getInitialVector().size(), 0);
   BOOST_CHECK_EQUAL(content.hasKeyLocator(), false);
   BOOST_CHECK_THROW(content.getKeyLocator(), EncryptedContent::Error);
 
-  Buffer payload(message, sizeof(message));
-  //Buffer initialVector(iv, sizeof(iv));
+  // check an encrypted content with IV
+  EncryptedContent rsaOaepContent(tlv::AlgorithmRsaOaep,
+                                  KeyLocator("test/key/locator"),
+                                  message, sizeof(message),
+                                  iv, sizeof(iv));
 
-  KeyLocator keyLocator("test/key/locator");
-  EncryptedContent sha256RsaContent(tlv::AlgorithmRsaOaep, keyLocator,
-                                    message, sizeof(message), iv, sizeof(iv));
-  const Buffer& contentPayload = sha256RsaContent.getPayload();
-  const Buffer& contentInitialVector = sha256RsaContent.getInitialVector();
-
-  BOOST_CHECK_EQUAL(sha256RsaContent.getAlgorithmType(), tlv::AlgorithmRsaOaep);
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentPayload.begin(),
-                                contentPayload.end(),
-                                payload.begin(),
-                                payload.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentInitialVector.begin(),
-                                contentInitialVector.end(),
+  BOOST_CHECK_EQUAL(rsaOaepContent.getAlgorithmType(), tlv::AlgorithmRsaOaep);
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContent.getPayload().begin(),
+                                rsaOaepContent.getPayload().end(),
+                                message,
+                                message + sizeof(message));
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContent.getInitialVector().begin(),
+                                rsaOaepContent.getInitialVector().end(),
                                 iv,
                                 iv + sizeof(iv));
-  BOOST_CHECK_EQUAL(sha256RsaContent.hasKeyLocator(), true);
-  BOOST_CHECK_NO_THROW(sha256RsaContent.getKeyLocator());
-  BOOST_CHECK_EQUAL(sha256RsaContent.getKeyLocator().getName(), Name("test/key/locator"));
+  BOOST_CHECK_EQUAL(rsaOaepContent.hasKeyLocator(), true);
+  BOOST_CHECK_NO_THROW(rsaOaepContent.getKeyLocator());
+  BOOST_CHECK_EQUAL(rsaOaepContent.getKeyLocator().getName(), Name("test/key/locator"));
 
+  // encoding
   Block encryptedBlock(encrypted, sizeof(encrypted));
-  const Block& encoded = sha256RsaContent.wireEncode();
+  const Block& encoded = rsaOaepContent.wireEncode();
 
   BOOST_CHECK_EQUAL_COLLECTIONS(encryptedBlock.wire(),
                                 encryptedBlock.wire() + encryptedBlock.size(),
                                 encoded.wire(),
                                 encoded.wire() + encoded.size());
 
-  sha256RsaContent = EncryptedContent(encryptedBlock);
-  const Buffer& contentPayloadBlock = sha256RsaContent.getPayload();
-  const Buffer& contentInitialVectorBlock = sha256RsaContent.getInitialVector();
-
-  BOOST_CHECK_EQUAL(sha256RsaContent.getAlgorithmType(), tlv::AlgorithmRsaOaep);
-  BOOST_CHECK_EQUAL(sha256RsaContent.hasKeyLocator(), true);
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentPayloadBlock.begin(),
-                                contentPayloadBlock.end(),
-                                payload.begin(),
-                                payload.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentInitialVectorBlock.begin(),
-                                contentInitialVectorBlock.end(),
+  // decoding
+  EncryptedContent rsaOaepContent2(encryptedBlock);
+  BOOST_CHECK_EQUAL(rsaOaepContent2.getAlgorithmType(), tlv::AlgorithmRsaOaep);
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContent2.getPayload().begin(),
+                                rsaOaepContent2.getPayload().end(),
+                                message,
+                                message + sizeof(message));
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContent2.getInitialVector().begin(),
+                                rsaOaepContent2.getInitialVector().end(),
                                 iv,
                                 iv + sizeof(iv));
-  BOOST_CHECK_NO_THROW(sha256RsaContent.getKeyLocator());
-  BOOST_CHECK_EQUAL(sha256RsaContent.getKeyLocator().getName(), Name("test/key/locator"));
+  BOOST_CHECK_EQUAL(rsaOaepContent2.hasKeyLocator(), true);
+  BOOST_CHECK_NO_THROW(rsaOaepContent2.getKeyLocator());
+  BOOST_CHECK_EQUAL(rsaOaepContent2.getKeyLocator().getName(), Name("test/key/locator"));
 
-  sha256RsaContent = EncryptedContent(tlv::AlgorithmRsaOaep, keyLocator,
+
+  // Check no IV case
+  EncryptedContent rsaOaepContentNoIv(tlv::AlgorithmRsaOaep,
+                                      KeyLocator("test/key/locator"),
                                       message, sizeof(message));
-  const Buffer& contentPayloadRecovered = sha256RsaContent.getPayload();
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv.getAlgorithmType(), tlv::AlgorithmRsaOaep);
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContentNoIv.getPayload().begin(),
+                                rsaOaepContentNoIv.getPayload().end(),
+                                message,
+                                message + sizeof(message));
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv.getInitialVector().size(), 0);
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv.hasKeyLocator(), true);
+  BOOST_CHECK_NO_THROW(rsaOaepContentNoIv.getKeyLocator());
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv.getKeyLocator().getName(), Name("test/key/locator"));
 
-  BOOST_CHECK_EQUAL(sha256RsaContent.getAlgorithmType(), tlv::AlgorithmRsaOaep);
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentPayloadRecovered.begin(),
-                                contentPayloadRecovered.end(),
-                                payload.begin(),
-                                payload.end());
-  BOOST_CHECK_EQUAL((sha256RsaContent.getInitialVector()).size(), 0);
-  BOOST_CHECK_EQUAL(sha256RsaContent.hasKeyLocator(), true);
-  BOOST_CHECK_NO_THROW(sha256RsaContent.getKeyLocator());
-  BOOST_CHECK_EQUAL(sha256RsaContent.getKeyLocator().getName(), Name("test/key/locator"));
-
-  encryptedBlock = Block(encrypted_noiv, sizeof(encrypted_noiv));
-  const Block& encodedNoIV = sha256RsaContent.wireEncode();
-
-  BOOST_CHECK_EQUAL_COLLECTIONS(encryptedBlock.wire(),
-                                encryptedBlock.wire() + encryptedBlock.size(),
+  // encoding
+  Block encryptedBlock2(encryptedNoIv, sizeof(encryptedNoIv));
+  const Block& encodedNoIV = rsaOaepContentNoIv.wireEncode();
+  BOOST_CHECK_EQUAL_COLLECTIONS(encryptedBlock2.wire(),
+                                encryptedBlock2.wire() + encryptedBlock2.size(),
                                 encodedNoIV.wire(),
                                 encodedNoIV.wire() + encodedNoIV.size());
 
-  sha256RsaContent = EncryptedContent(encryptedBlock);
-  const Buffer& contentPayloadNoIV = sha256RsaContent.getPayload();
-
-  BOOST_CHECK_EQUAL(sha256RsaContent.getAlgorithmType(), tlv::AlgorithmRsaOaep);
-  BOOST_CHECK_EQUAL(sha256RsaContent.hasKeyLocator(), true);
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentPayloadNoIV.begin(),
-                                contentPayloadNoIV.end(),
-                                payload.begin(),
-                                payload.end());
-  BOOST_CHECK_EQUAL((sha256RsaContent.getInitialVector()).size(), 0);
-  BOOST_CHECK_NO_THROW(sha256RsaContent.getKeyLocator());
-  BOOST_CHECK_EQUAL(sha256RsaContent.getKeyLocator().getName(), Name("test/key/locator"));
+  // decoding
+  EncryptedContent rsaOaepContentNoIv2(encryptedBlock2);
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv2.getAlgorithmType(), tlv::AlgorithmRsaOaep);
+  BOOST_CHECK_EQUAL_COLLECTIONS(rsaOaepContentNoIv2.getPayload().begin(),
+                                rsaOaepContentNoIv2.getPayload().end(),
+                                message,
+                                message + sizeof(message));
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv2.getInitialVector().size(), 0);
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv2.hasKeyLocator(), true);
+  BOOST_CHECK_NO_THROW(rsaOaepContentNoIv2.getKeyLocator());
+  BOOST_CHECK_EQUAL(rsaOaepContentNoIv2.getKeyLocator().getName(), Name("test/key/locator"));
 
 }
 
@@ -276,14 +273,14 @@ BOOST_AUTO_TEST_CASE(SetterGetter)
 {
   EncryptedContent content;
   BOOST_CHECK_EQUAL(content.getAlgorithmType(), -1);
-  BOOST_CHECK_EQUAL((content.getPayload()).size(), 0);
-  BOOST_CHECK_EQUAL((content.getInitialVector()).size(), 0);
+  BOOST_CHECK_EQUAL(content.getPayload().size(), 0);
+  BOOST_CHECK_EQUAL(content.getInitialVector().size(), 0);
   BOOST_CHECK_EQUAL(content.hasKeyLocator(), false);
   BOOST_CHECK_THROW(content.getKeyLocator(), EncryptedContent::Error);
 
   content.setAlgorithmType(tlv::AlgorithmRsaOaep);
   BOOST_CHECK_EQUAL(content.getAlgorithmType(), tlv::AlgorithmRsaOaep);
-  BOOST_CHECK_EQUAL((content.getPayload()).size(), 0);
+  BOOST_CHECK_EQUAL(content.getPayload().size(), 0);
   BOOST_CHECK_EQUAL(content.getInitialVector().size(), 0);
   BOOST_CHECK_EQUAL(content.hasKeyLocator(), false);
 
@@ -292,28 +289,23 @@ BOOST_AUTO_TEST_CASE(SetterGetter)
   BOOST_CHECK_EQUAL(content.hasKeyLocator(), true);
   BOOST_CHECK_NO_THROW(content.getKeyLocator());
   BOOST_CHECK_EQUAL(content.getKeyLocator().getName(), Name("/test/key/locator"));
-  BOOST_CHECK_EQUAL((content.getPayload()).size(), 0);
-  BOOST_CHECK_EQUAL((content.getInitialVector()).size(), 0);
+  BOOST_CHECK_EQUAL(content.getPayload().size(), 0);
+  BOOST_CHECK_EQUAL(content.getInitialVector().size(), 0);
 
   content.setPayload(message, sizeof(message));
-
-  const Buffer& contentPayload = content.getPayload();
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentPayload.begin(),
-                                contentPayload.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(content.getPayload().begin(),
+                                content.getPayload().end(),
                                 message,
                                 message + sizeof(message));
 
   content.setInitialVector(iv, sizeof(iv));
-
-  const Buffer& contentInitialVector = content.getInitialVector();
-  BOOST_CHECK_EQUAL_COLLECTIONS(contentInitialVector.begin(),
-                                contentInitialVector.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(content.getInitialVector().begin(),
+                                content.getInitialVector().end(),
                                 iv,
                                 iv + sizeof(iv));
 
   const Block& encoded = content.wireEncode();
   Block contentBlock(encrypted, sizeof(encrypted));
-
   BOOST_CHECK_EQUAL_COLLECTIONS(contentBlock.wire(),
                                 contentBlock.wire() + contentBlock.size(),
                                 encoded.wire(),
