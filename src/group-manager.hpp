@@ -49,11 +49,11 @@ public:
    *
    * The namespace of group manager is /<prefix>/read/<dataType>/
    * The group management information (including user cert, schedule) is stored in a database
-   * at @p dbDir.
-   * The group key will be an RSA key with @p paramLength bytes.
-   * The FreshnessPeriod of data packet carrying the keys will be set to @p freshPeriod.
+   * at @p dbPath.
+   * The group key will be an RSA key with @p paramLength bits.
+   * The FreshnessPeriod of data packet carrying the keys will be set to @p freshPeriod hours.
    */
-  GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
+  GroupManager(const Name& prefix, const Name& dataType, const std::string& dbPath,
                const int paramLength, const int freshPeriod);
 
   /**

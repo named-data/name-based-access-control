@@ -60,11 +60,11 @@ static const std::string INITIALIZATION =
 class GroupManagerDB::Impl
 {
 public:
-  Impl(const std::string& dbDir)
+  Impl(const std::string& dbPath)
   {
     // open Database
 
-    int result = sqlite3_open_v2(dbDir.c_str(), &m_database,
+    int result = sqlite3_open_v2(dbPath.c_str(), &m_database,
                                  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
 #ifdef NDN_CXX_DISABLE_SQLITE3_FS_LOCKING
                                  "unix-dotfile"
@@ -74,7 +74,7 @@ public:
                                  );
 
     if (result != SQLITE_OK)
-      BOOST_THROW_EXCEPTION(Error("GroupManager DB cannot be opened/created: " + dbDir));
+      BOOST_THROW_EXCEPTION(Error("GroupManager DB cannot be opened/created: " + dbPath));
 
     // enable foreign key
     sqlite3_exec(m_database, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr);
@@ -110,8 +110,8 @@ public:
   sqlite3* m_database;
 };
 
-GroupManagerDB::GroupManagerDB(const std::string& dbDir)
-  : m_impl(new Impl(dbDir))
+GroupManagerDB::GroupManagerDB(const std::string& dbPath)
+  : m_impl(new Impl(dbPath))
 {
 }
 

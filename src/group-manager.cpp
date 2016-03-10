@@ -28,10 +28,10 @@
 namespace ndn {
 namespace gep {
 
-GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbDir,
+GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbPath,
                            const int paramLength, const int freshPeriod)
   : m_namespace(prefix)
-  , m_db(dbDir)
+  , m_db(dbPath)
   , m_paramLength(paramLength)
   , m_freshPeriod(freshPeriod)
 {

@@ -46,8 +46,11 @@ public:
   };
 
 public:
+  /**
+   * @brief Create the database of group manager at path @p dbPath.
+   */
   explicit
-  GroupManagerDB(const std::string& dbDir);
+  GroupManagerDB(const std::string& dbPath);
 
   ~GroupManagerDB();
 
@@ -90,7 +93,8 @@ public:
   addSchedule(const std::string& name, const Schedule& schedule);
 
   /**
-   * @brief Delete the schedule with @p name
+   * @brief Delete the schedule with @p name.
+   *        also delete members which reference the schedule.
    */
   void
   deleteSchedule(const std::string& name);
