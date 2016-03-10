@@ -32,7 +32,8 @@ enum class ErrorCode {
   Validation = 2,
   UnsupportedEncryptionScheme = 32,
   InvalidEncryptedFormat = 33,
-  NoDecryptKey = 34
+  NoDecryptKey = 34,
+  EncryptionFailure = 35
 };
 
 typedef function<void (const ErrorCode&, const std::string&)> ErrorCallBack;

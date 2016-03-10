@@ -5,6 +5,7 @@ ndn-group-encrypt authors
 
 * Yingdi Yu             <http://irl.cs.ucla.edu/~yingdi/>
 * Prashanth Swaminathan <prashanthsw@gmail.com>
+* Zhiyi Zhang           <dreamerbarrychang@gmail.com>
 
 ## All project authors and contributors
 
