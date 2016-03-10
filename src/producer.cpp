@@ -84,7 +84,6 @@ Producer::createContentKey(const system_clock::TimePoint& timeslot,
 
   Buffer contentKeyBits;
   if (m_db.hasContentKey(timeslot)) {
-    contentKeyBits = m_db.getContentKey(timeslot);
     return contentKeyName;
   }
 
