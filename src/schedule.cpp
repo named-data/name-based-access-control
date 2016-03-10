@@ -75,15 +75,15 @@ Schedule::wireEncode(EncodingImpl<TAG>& encoder) const
   size_t whiteLength = 0;
 
   // encode the blackIntervalList as an embed TLV structure
-  for (const RepetitiveInterval& element : m_blackIntervalList) {
-    blackLength += encoder.prependBlock(element.wireEncode());
+  for (auto it = m_blackIntervalList.rbegin(); it != m_blackIntervalList.rend(); it++) {
+    blackLength += encoder.prependBlock(it->wireEncode());
   }
   blackLength += encoder.prependVarNumber(blackLength);
   blackLength += encoder.prependVarNumber(tlv::BlackIntervalList);
 
   // encode the whiteIntervalList as an embed TLV structure
-  for (const RepetitiveInterval& element : m_whiteIntervalList) {
-    whiteLength += encoder.prependBlock(element.wireEncode());
+  for (auto it = m_whiteIntervalList.rbegin(); it != m_whiteIntervalList.rend(); it++) {
+    whiteLength += encoder.prependBlock(it->wireEncode());
   }
   whiteLength += encoder.prependVarNumber(whiteLength);
   whiteLength += encoder.prependVarNumber(tlv::WhiteIntervalList);
