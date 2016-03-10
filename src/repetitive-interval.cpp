@@ -258,17 +258,30 @@ RepetitiveInterval::operator<(const RepetitiveInterval& interval) const
 {
   if (m_startDate < interval.getStartDate())
     return true;
+  else if (m_startDate > interval.getStartDate())
+    return false;
+
   if (m_endDate < interval.getEndDate())
     return true;
+  else if (m_endDate > interval.getEndDate())
+    return false;
+
   if (m_intervalStartHour < interval.getIntervalStartHour())
     return true;
+  else if (m_intervalStartHour > interval.getIntervalStartHour())
+    return false;
+
   if (m_intervalEndHour < interval.getIntervalEndHour())
     return true;
+  else if (m_intervalEndHour > interval.getIntervalEndHour())
+    return false;
+
   if (m_nRepeats < interval.getNRepeats())
     return true;
-  if (static_cast<size_t>(m_unit) < static_cast<size_t>(interval.getRepeatUnit()))
-    return true;
-  return false;
+  else if (m_nRepeats > interval.getNRepeats())
+    return false;
+
+  return (static_cast<size_t>(m_unit) < static_cast<size_t>(interval.getRepeatUnit()));
 }
 
 } // namespace gep

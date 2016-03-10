@@ -200,6 +200,50 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecode)
   BOOST_CHECK(repetitiveInterval3.getRepeatUnit() == RepetitiveInterval::RepeatUnit::DAY);
 }
 
+static bool
+check(const RepetitiveInterval& small, const RepetitiveInterval& big)
+{
+  return  (small < big && !(big < small));
+}
+
+BOOST_AUTO_TEST_CASE(Comparison)
+{
+  BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                    RepetitiveInterval(from_iso_string("20150826T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY)));
+
+  BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                    RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       6, 10, 2, RepetitiveInterval::RepeatUnit::DAY)));
+
+  BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                    RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 11, 2, RepetitiveInterval::RepeatUnit::DAY)));
+
+  BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                    RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 3, RepetitiveInterval::RepeatUnit::DAY)));
+
+  BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                    RepetitiveInterval(from_iso_string("20150825T000000"),
+                                       from_iso_string("20150828T000000"),
+                                       5, 10, 2, RepetitiveInterval::RepeatUnit::MONTH)));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
