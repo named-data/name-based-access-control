@@ -2,6 +2,9 @@
 set -x
 set -e
 
+JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source "$JDIR"/util.sh
+
 sudo rm -Rf /usr/local/include/ndn-group-encrypt
 sudo rm -f /usr/local/lib/libndn-group-encrypt*
 sudo rm -f /usr/local/lib/pkgconfig/ndn-group-encrypt*
@@ -29,4 +32,9 @@ sudo ./waf -j1 --color=yes distclean
 
 # Install
 sudo ./waf install -j1 --color=yes
-sudo ldconfig || true
+
+if has Linux $NODE_LABELS; then
+    sudo ldconfig
+elif has FreeBSD $NODE_LABELS; then
+    sudo ldconfig -a
+fi
