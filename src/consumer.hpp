@@ -51,21 +51,26 @@ public:
    * @param face The face used for key fetching
    * @param groupName The reading group name that the consumer belongs to
    * @param consumerName The identity of the consumer
-   * @param dbDir The path to database storing decryption key
+   * @param dbPath The path to database storing decryption key
+   * @param cKeyLink The link object for C-KEY retrieval
+   * @param dKeyLink The link object for D-KEY retrieval
    */
-  Consumer(Face& face, const Name& groupName, const Name& consumerName, const std::string& dbDir);
+  Consumer(Face& face, const Name& groupName, const Name& consumerName, const std::string& dbPath,
+           const Link& cKeyLink = NO_LINK, const Link& dKeyLink = NO_LINK);
 
   /**
    * @brief Send out the Interest packet to fetch content packet with @p dataName.
    *
    * @param dataName name of the data packet to fetch
    * @param consumptionCallBack The callback when requested data is decrypted
-   * @param errorCallBack The callback when error happens in consumption
+   * @param errorCallback The callback when error happens in consumption
+   * @param link The link object for data retrieval
    */
   void
   consume(const Name& dataName,
           const ConsumptionCallBack& consumptionCallBack,
-          const ErrorCallBack& errorCallBack);
+          const ErrorCallBack& errorCallback,
+          const Link& link = NO_LINK);
 
   /**
    * @brief Set the group name to @p groupName.
@@ -84,43 +89,43 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
    * @brief Decrypt @p encryptedBlock using @p keyBits
    *
-   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallBack.
+   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallback.
    */
   void
   decrypt(const Block& encryptedBlock,
           const Buffer& keyBits,
           const PlainTextCallBack& plainTextCallBack,
-          const ErrorCallBack& errorCallBack);
+          const ErrorCallBack& errorCallback);
 
   /**
    * @brief Decrypt @p data.
    *
-   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallBack.
+   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallback.
    */
   void
   decryptContent(const Data& data,
                  const PlainTextCallBack& plainTextCallBack,
-                 const ErrorCallBack& errorCallBack);
+                 const ErrorCallBack& errorCallback);
 
   /**
    * @brief Decrypt @p cKeyData.
    *
-   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallBack.
+   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallback.
    */
   void
   decryptCKey(const Data& cKeyData,
               const PlainTextCallBack& plainTextCallBack,
-              const ErrorCallBack& errorCallBack);
+              const ErrorCallBack& errorCallback);
 
   /**
    * @brief Decrypt @p dKeyData.
    *
-   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallBack.
+   * Invoke @p plainTextCallBack when block is decrypted, otherwise @p errorCallback.
    */
   void
   decryptDKey(const Data& dKeyData,
               const PlainTextCallBack& plainTextCallBack,
-              const ErrorCallBack& errorCallBack);
+              const ErrorCallBack& errorCallback);
 
 
   /**
@@ -131,6 +136,63 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   const Buffer
   getDecryptionKey(const Name& decryptionKeyName);
 
+  /**
+   * @brief Helper method for sending interest
+   *
+   * This method prepare the three callbacks: DataCallbak, NackCallback, TimeoutCallback
+   * for the @p interest.
+   *
+   * @param interest The interes to send out
+   * @param nRetrials The number of retrials left (if timeout)
+   * @param link The link object (used when NACK is received)
+   * @param validationCallback The callback when data is validated
+   * @param errorCallback The callback when error happens
+   */
+  void
+  sendInterest(const Interest& interest, int nRetrials,
+               const Link& link,
+               const OnDataValidated& validationCallback,
+               const ErrorCallBack& errorCallback);
+
+  /**
+   * @brief Callback to handle NACK
+   *
+   * This method will check if there is another delegation to use. Otherwise report error
+   *
+   * @param interest The interes got NACKed
+   * @param nack The nack object
+   * @param link The link object (used when NACK is received)
+   * @param delegationIndex Current selected delegation
+   * @param validationCallback The callback when data is validated
+   * @param errorCallback The callback when error happens
+   */
+  void
+  handleNack(const Interest& interest, const lp::Nack& nack,
+             const Link& link,
+             const OnDataValidated& validationCallback,
+             const ErrorCallBack& errorCallback);
+
+  /**
+   * @brief Callback to handle timeout
+   *
+   * This method will check if a retrial is allowed. Otherwise retreat the interest as NACKed
+   *
+   * @param interest The interes timed out
+   * @param nRetrials The number of retrials left
+   * @param link The link object (used when NACK is received)
+   * @param delegationIndex Current selected delegation
+   * @param validationCallback The callback when data is validated
+   * @param errorCallback The callback when error happens
+   */
+  void
+  handleTimeout(const Interest& interest, int nRetrials,
+                const Link& link,
+                const OnDataValidated& validationCallback,
+                const ErrorCallBack& errorCallback);
+
+public:
+  static const Link NO_LINK;
+
 private:
   ConsumerDB m_db;
   unique_ptr<Validator> m_validator;
@@ -138,7 +200,9 @@ private:
   Name m_groupName;
   Name m_consumerName;
 
+  Link m_cKeyLink;
   std::map<Name, Buffer> m_cKeyMap;
+  Link m_dKeyLink;
   std::map<Name, Buffer> m_dKeyMap;
 };
 

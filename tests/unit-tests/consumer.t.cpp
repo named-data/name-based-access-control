@@ -290,6 +290,80 @@ BOOST_AUTO_TEST_CASE(Consume)
   BOOST_CHECK_EQUAL(finalCount, 1);
 }
 
+BOOST_AUTO_TEST_CASE(CosumerWithLink)
+{
+  auto contentData = createEncryptedContent();
+  auto cKeyData = createEncryptedCKey();
+  auto dKeyData = createEncryptedDKey();
+
+  int contentCount = 0;
+  int cKeyCount = 0;
+  int dKeyCount = 0;
+  int resultCount = 0;
+
+  Name prefix("/Prefix");
+  // prepare face1
+  face1.setInterestFilter(prefix,
+                          [&] (const InterestFilter&, const Interest& i) {
+                            BOOST_CHECK(i.getLink().getDelegations().size() == 3);
+                            if (i.matchesData(*contentData)) {
+                              contentCount++;
+                              face1.put(*contentData);
+                              return;
+                            }
+                            if (i.matchesData(*cKeyData)) {
+                              cKeyCount++;
+                              face1.put(*cKeyData);
+                              return;
+                            }
+                            if (i.matchesData(*dKeyData)) {
+                              dKeyCount++;
+                              face1.put(*dKeyData);
+                              return;
+                            }
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) { });
+
+  do {
+    advanceClocks(time::milliseconds(10), 20);
+  } while (passPacket());
+
+  // create consumer
+  std::string dbDir = tmpPath.c_str();
+  dbDir += "/test.db";
+
+  Link ckeylink("ckey", {{10, "/ckey1"}, {20, "/ckey2"}, {100, "/ckey3"}});
+  Link dkeylink("dkey", {{10, "/dkey1"}, {20, "/dkey2"}, {100, "/dkey3"}});
+  Link datalink("data", {{10, "/data1"}, {20, "/data2"}, {100, "/data3"}});
+  keyChain.sign(ckeylink);
+  keyChain.sign(dkeylink);
+  keyChain.sign(datalink);
+
+  Consumer consumer(face2, groupName, uName, dbDir, ckeylink, dkeylink);
+  consumer.addDecryptionKey(uKeyName, fixtureUDKeyBuf);
+
+  consumer.consume(contentName,
+                   [&](const Data& data, const Buffer& result){
+                     BOOST_CHECK(true);
+                     resultCount++;
+                   },
+                   [](const ErrorCode& code, const std::string& str){
+                     BOOST_CHECK(false);
+                   },
+                   datalink);
+
+  do {
+    advanceClocks(time::milliseconds(10), 200);
+  } while (passPacket());
+
+  BOOST_CHECK_EQUAL(resultCount, 1);
+  BOOST_CHECK_EQUAL(contentCount, 1);
+  BOOST_CHECK_EQUAL(cKeyCount, 1);
+  BOOST_CHECK_EQUAL(dKeyCount, 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace test

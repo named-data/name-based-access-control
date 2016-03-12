@@ -34,6 +34,8 @@ using time::system_clock;
 static const int START_TS_INDEX = -2;
 static const int END_TS_INDEX = -1;
 
+const Link Producer::NO_LINK = Link();
+
 /**
   @brief Method to round the provided @p timeslot to the nearest whole
   hour, so that we can store content keys uniformly (by start of the hour).
@@ -45,10 +47,13 @@ getRoundedTimeslot(const system_clock::TimePoint& timeslot) {
 }
 
 Producer::Producer(const Name& prefix, const Name& dataType,
-                   Face& face, const std::string& dbPath, uint8_t repeatAttempts)
-  : m_face(face),
-    m_db(dbPath),
-    m_maxRepeatAttempts(repeatAttempts)
+                   Face& face, const std::string& dbPath,
+                   uint8_t repeatAttempts,
+                   const Link& keyRetrievalLink)
+  : m_face(face)
+  , m_db(dbPath)
+  , m_maxRepeatAttempts(repeatAttempts)
+  , m_keyRetrievalLink(keyRetrievalLink)
 {
   Name fixedPrefix = prefix;
   Name fixedDataType = dataType;
@@ -159,11 +164,15 @@ Producer::sendKeyInterest(const Interest& interest,
                           const ProducerEKeyCallback& callback,
                           const ErrorCallBack& errorCallback)
 {
-  m_face.expressInterest(interest,
+  Interest request(interest);
+  if (m_keyRetrievalLink.getDelegations().size() > 0) {
+    request.setLink(m_keyRetrievalLink.wireEncode());
+  }
+  m_face.expressInterest(request,
                          std::bind(&Producer::handleCoveringKey, this, _1, _2,
                                    timeslot, callback, errorCallback),
                          std::bind(&Producer::handleNack, this, _1, _2,
-                                   timeslot, callback),
+                                   timeslot, callback, errorCallback),
                          std::bind(&Producer::handleTimeout, this, _1,
                                    timeslot, callback, errorCallback));
 }
@@ -221,8 +230,8 @@ Producer::handleTimeout(const Interest& interest,
     sendKeyInterest(interest, timeslot, callback, errorCallback);
   }
   else {
-    // no more retrial
-    updateKeyRequest(keyRequest, timeCount, callback);
+    // treat eventual timeout as a NACK
+    handleNack(interest, lp::Nack(), timeslot, callback, errorCallback);
   }
 }
 
@@ -230,8 +239,10 @@ void
 Producer::handleNack(const Interest& interest,
                      const lp::Nack& nack,
                      const system_clock::TimePoint& timeslot,
-                     const ProducerEKeyCallback& callback)
+                     const ProducerEKeyCallback& callback,
+                     const ErrorCallBack& errorCallback)
 {
+  // we run out of options...
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
   updateKeyRequest(m_keyRequests.at(timeCount), timeCount, callback);
 }

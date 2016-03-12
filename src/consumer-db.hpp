@@ -44,8 +44,10 @@ public:
   };
 
 public:
+  /** @brief Create a consumer database at @p dbPath
+   */
   explicit
-  ConsumerDB(const std::string& dbDir);
+  ConsumerDB(const std::string& dbPath);
 
   ~ConsumerDB();
 

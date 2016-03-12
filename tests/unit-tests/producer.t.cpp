@@ -171,10 +171,8 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
     advanceClocks(time::milliseconds(10), 20);
   } while (passPacket());
 
-  /*
-  Verify that content key is correctly encrypted for each domain, and the
-  produce method encrypts provided data with the same content key.
-  */
+  // Verify that content key is correctly encrypted for each domain, and the
+  // produce method encrypts provided data with the same content key.
   Producer producer(prefix, suffix, face1, dbDir);
   ProducerDB testDb(dbDir);
   Buffer contentKey;
@@ -327,10 +325,8 @@ BOOST_AUTO_TEST_CASE(ContentKeySearch)
     advanceClocks(time::milliseconds(10), 20);
   } while (passPacket());
 
-  /*
-  Verify that if a key is found, but not within the right timeslot, the search
-  is refined until a valid timeslot is found.
-  */
+  // Verify that if a key is found, but not within the right timeslot, the search
+  // is refined until a valid timeslot is found.
   Producer producer(prefix, suffix, face1, dbDir);
   producer.createContentKey(testTime,
           [&](const std::vector<Data>& result){
@@ -378,10 +374,8 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
     advanceClocks(time::milliseconds(10), 20);
   } while (passPacket());
 
-  /*
-  Verify that if no response is received, the producer appropriately times out.
-  The result vector should not contain elements that have timed out.
-  */
+  // Verify that if no response is received, the producer appropriately times out.
+  // The result vector should not contain elements that have timed out.
   Producer producer(prefix, suffix, face1, dbDir);
   producer.createContentKey(testTime,
           [&](const std::vector<Data>& result){
@@ -391,6 +385,51 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
 
   do {
     advanceClocks(time::milliseconds(10), 500);
+  } while (passPacket());
+}
+
+BOOST_AUTO_TEST_CASE(ProducerWithLink)
+{
+  std::string dbDir = tmpPath.c_str();
+  dbDir += "/test.db";
+
+  Name prefix("/prefix");
+  Name suffix("/suffix");
+  Name expectedInterest = prefix;
+  expectedInterest.append(NAME_COMPONENT_READ);
+  expectedInterest.append(suffix);
+  expectedInterest.append(NAME_COMPONENT_E_KEY);
+
+  time::system_clock::TimePoint testTime = time::fromIsoString("20150101T100001");
+
+  size_t timeoutCount = 0;
+  face2.setInterestFilter(prefix,
+        [&] (const InterestFilter&, const Interest& i) {
+           BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
+           BOOST_CHECK(i.getLink().getDelegations().size() == 3);
+           timeoutCount++;
+           return;
+        },
+        RegisterPrefixSuccessCallback(),
+        [] (const Name&, const std::string& e) { });
+
+  do {
+    advanceClocks(time::milliseconds(10), 20);
+  } while (passPacket());
+
+  // Verify that if no response is received, the producer appropriately times out.
+  // The result vector should not contain elements that have timed out.
+  Link link("test", {{10, "/test1"}, {20, "/test2"}, {100, "/test3"}});
+  keyChain.sign(link);
+  Producer producer(prefix, suffix, face1, dbDir, 3, link);
+  producer.createContentKey(testTime,
+          [&](const std::vector<Data>& result){
+            BOOST_CHECK_EQUAL(timeoutCount, 4);
+            BOOST_CHECK_EQUAL(result.size(), 0);
+          });
+
+  do {
+    advanceClocks(time::milliseconds(10), 800);
   } while (passPacket());
 }
 

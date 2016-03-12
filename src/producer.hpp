@@ -72,7 +72,9 @@ public:
    * E-KEY retrieval fails.
    */
   Producer(const Name& prefix, const Name& dataType,
-           Face& face, const std::string& dbPath, uint8_t repeatAttempts = 3);
+           Face& face, const std::string& dbPath,
+           uint8_t repeatAttempts = 3,
+           const Link& keyRetrievalLink = NO_LINK);
 
   /**
    * @brief Create content key corresponding to @p timeslot
@@ -165,7 +167,8 @@ private:
   handleNack(const Interest& interest,
              const lp::Nack& nack,
              const time::system_clock::TimePoint& timeslot,
-             const ProducerEKeyCallback& callback);
+             const ProducerEKeyCallback& callback,
+             const ErrorCallBack& errorCallBack = Producer::defaultErrorCallBack);
 
   /**
    * @brief Decrease the count of outstanding E-KEY interests for C-KEY for @p timeCount
@@ -190,6 +193,9 @@ private:
                     const ProducerEKeyCallback& callback,
                     const ErrorCallBack& errorCallback = Producer::defaultErrorCallBack);
 
+public:
+  static const Link NO_LINK;
+
 private:
   Face& m_face;
   Name m_namespace;
@@ -198,6 +204,8 @@ private:
   std::unordered_map<uint64_t, KeyRequest> m_keyRequests;
   ProducerDB m_db;
   uint8_t m_maxRepeatAttempts;
+
+  Link m_keyRetrievalLink;
 };
 
 } // namespace gep
