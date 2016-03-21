@@ -76,7 +76,7 @@ def build(bld):
         dest = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],
         files = bld.path.ant_glob(['src/**/*.hpp', 'src/**/*.h', 'common.hpp']),
         cwd = bld.path.find_dir("src"),
-        relative_trick = False,
+        relative_trick = True,
         )
         
 

@@ -18,12 +18,12 @@
  */
 
 #include "encryptor.hpp"
-#include "random-number-generator.hpp"
-#include "encrypted-content.hpp"
-#include "algo/aes.hpp"
-#include "algo/rsa.hpp"
+#include "../random-number-generator.hpp"
+#include "../encrypted-content.hpp"
+#include "aes.hpp"
+#include "rsa.hpp"
 
-#include "algo/error.hpp"
+#include "error.hpp"
 
 namespace ndn {
 namespace gep {

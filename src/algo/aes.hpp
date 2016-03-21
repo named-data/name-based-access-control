@@ -21,9 +21,9 @@
 #define NDN_GEP_ALGO_AES_HPP
 
 #include <ndn-cxx/security/key-params.hpp>
-#include "random-number-generator.hpp"
-#include "algo/encrypt-params.hpp"
-#include "decrypt-key.hpp"
+#include "../random-number-generator.hpp"
+#include "encrypt-params.hpp"
+#include "../decrypt-key.hpp"
 
 
 namespace ndn {

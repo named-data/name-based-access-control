@@ -21,7 +21,7 @@
 #define NDN_ENCRYPTOR_HPP
 
 #include <ndn-cxx/data.hpp>
-#include "algo/encrypt-params.hpp"
+#include "encrypt-params.hpp"
 
 namespace ndn {
 namespace gep {

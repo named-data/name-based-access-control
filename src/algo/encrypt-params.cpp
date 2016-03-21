@@ -17,7 +17,7 @@
  * gep, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "random-number-generator.hpp"
+#include "../random-number-generator.hpp"
 #include "encrypt-params.hpp"
 
 namespace ndn {
