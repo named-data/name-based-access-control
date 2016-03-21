@@ -145,7 +145,7 @@ Producer::produce(Data& data, const system_clock::TimePoint& timeslot,
 
   // Produce data
   Name dataName = m_namespace;
-  dataName.append(time::toIsoString(getRoundedTimeslot(timeslot)));
+  dataName.append(time::toIsoString(timeslot));
   data.setName(dataName);
   algo::EncryptParams params(tlv::AlgorithmAesCbc, 16);
   algo::encryptData(data, content, contentLen, contentKeyName,

@@ -147,6 +147,7 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   time::system_clock::TimePoint testTime2 = time::fromIsoString("20150101T110001");
   name::Component testTimeRounded1("20150101T100000");
   name::Component testTimeRounded2("20150101T110000");
+  name::Component testTimeComponent2("20150101T110001");
 
   // Create content keys required for this test case:
   for (size_t i = 0; i < suffix.size(); i++) {
@@ -244,7 +245,7 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
 
   Name producedName = testData.getName();
   BOOST_CHECK_EQUAL(producedName.getSubName(0,5), cKeyName.getPrefix(-1));
-  BOOST_CHECK_EQUAL(producedName.get(5), testTimeRounded2);
+  BOOST_CHECK_EQUAL(producedName.get(5), testTimeComponent2);
   BOOST_CHECK_EQUAL(producedName.get(6), NAME_COMPONENT_FOR);
   BOOST_CHECK_EQUAL(producedName.getSubName(7,6), cKeyName);
   BOOST_CHECK_EQUAL(producedName.get(13), testTimeRounded2);
