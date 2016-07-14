@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2016,  Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -57,8 +57,8 @@ class ConsumerFixture : public UnitTestTimeFixture
 public:
   ConsumerFixture()
     : tmpPath(boost::filesystem::path(TMP_TESTS_PATH))
-    , face1(util::makeDummyClientFace(io, {true, true}))
-    , face2(util::makeDummyClientFace(io, {true, true}))
+    , face1(io, keyChain, {true, true})
+    , face2(io, keyChain, {true, true})
     , readInterestOffset1(0)
     , readDataOffset1(0)
     , readInterestOffset2(0)
@@ -131,10 +131,10 @@ public:
   {
     bool hasPassed = false;
 
-    checkFace(face1->sentInterests, readInterestOffset1, *face2, hasPassed);
-    checkFace(face1->sentDatas, readDataOffset1, *face2, hasPassed);
-    checkFace(face2->sentInterests, readInterestOffset2, *face1, hasPassed);
-    checkFace(face2->sentDatas, readDataOffset2, *face1, hasPassed);
+    checkFace(face1.sentInterests, readInterestOffset1, face2, hasPassed);
+    checkFace(face1.sentData, readDataOffset1, face2, hasPassed);
+    checkFace(face2.sentInterests, readInterestOffset2, face1, hasPassed);
+    checkFace(face2.sentData, readDataOffset2, face1, hasPassed);
 
     return hasPassed;
   }
@@ -156,8 +156,8 @@ public:
 public:
   boost::filesystem::path tmpPath;
 
-  shared_ptr<util::DummyClientFace> face1;
-  shared_ptr<util::DummyClientFace> face2;
+  util::DummyClientFace face1;
+  util::DummyClientFace face2;
 
   size_t readInterestOffset1;
   size_t readDataOffset1;
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(DecryptContent)
   auto contentData = createEncryptedContent();
 
   // create consumer
-  Consumer consumer(*face1, Name("/Group"), Name("/U"), dbDir);
+  Consumer consumer(face1, Name("/Group"), Name("/U"), dbDir);
 
   // decrypt
   consumer.decrypt(cKeyData->getContent().blockFromValue(),
@@ -236,27 +236,27 @@ BOOST_AUTO_TEST_CASE(Consume)
 
   Name prefix("/Prefix");
   // prepare face1
-  face1->setInterestFilter(prefix,
-                           [&] (const InterestFilter&, const Interest& i) {
-                             if (i.matchesData(*contentData)) {
-                               contentCount = 1;
-                               face1->put(*contentData);
-                               return;
-                             }
-                             if (i.matchesData(*cKeyData)) {
-                               cKeyCount = 1;
-                               face1->put(*cKeyData);
-                               return;
-                             }
-                             if (i.matchesData(*dKeyData)) {
-                               dKeyCount = 1;
-                               face1->put(*dKeyData);
-                               return;
-                             }
-                             return;
-                           },
-                           RegisterPrefixSuccessCallback(),
-                           [] (const Name&, const std::string& e) { });
+  face1.setInterestFilter(prefix,
+                          [&] (const InterestFilter&, const Interest& i) {
+                            if (i.matchesData(*contentData)) {
+                              contentCount = 1;
+                              face1.put(*contentData);
+                              return;
+                            }
+                            if (i.matchesData(*cKeyData)) {
+                              cKeyCount = 1;
+                              face1.put(*cKeyData);
+                              return;
+                            }
+                            if (i.matchesData(*dKeyData)) {
+                              dKeyCount = 1;
+                              face1.put(*dKeyData);
+                              return;
+                            }
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) { });
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(Consume)
   // create consumer
   std::string dbDir = tmpPath.c_str();
   dbDir += "/test.db";
-  Consumer consumer(*face2, groupName, uName, dbDir);
+  Consumer consumer(face2, groupName, uName, dbDir);
   consumer.addDecryptionKey(uKeyName, fixtureUDKeyBuf);
 
   int finalCount = 0;

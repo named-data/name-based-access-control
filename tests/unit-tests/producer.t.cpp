@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2016,  Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -47,8 +47,8 @@ class ProducerFixture : public UnitTestTimeFixture
 public:
   ProducerFixture()
     : tmpPath(boost::filesystem::path(TMP_TESTS_PATH))
-    , face1(util::makeDummyClientFace(io, {true, true}))
-    , face2(util::makeDummyClientFace(io, {true, true}))
+    , face1(io, keyChain, {true, true})
+    , face2(io, keyChain, {true, true})
     , readInterestOffset1(0)
     , readDataOffset1(0)
     , readInterestOffset2(0)
@@ -84,10 +84,10 @@ public:
   {
     bool hasPassed = false;
 
-    checkFace(face1->sentInterests, readInterestOffset1, *face2, hasPassed);
-    checkFace(face1->sentDatas, readDataOffset1, *face2, hasPassed);
-    checkFace(face2->sentInterests, readInterestOffset2, *face1, hasPassed);
-    checkFace(face2->sentDatas, readDataOffset2, *face1, hasPassed);
+    checkFace(face1.sentInterests, readInterestOffset1, face2, hasPassed);
+    checkFace(face1.sentData, readDataOffset1, face2, hasPassed);
+    checkFace(face2.sentInterests, readInterestOffset2, face1, hasPassed);
+    checkFace(face2.sentData, readDataOffset2, face1, hasPassed);
 
     return hasPassed;
   }
@@ -109,8 +109,8 @@ public:
 public:
   boost::filesystem::path tmpPath;
 
-  shared_ptr<util::DummyClientFace> face1;
-  shared_ptr<util::DummyClientFace> face2;
+  util::DummyClientFace face1;
+  util::DummyClientFace face2;
 
   size_t readInterestOffset1;
   size_t readDataOffset1;
@@ -155,17 +155,17 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
     expectedInterest = expectedInterest.getPrefix(-2).append(NAME_COMPONENT_E_KEY);
   }
 
-  face2->setInterestFilter(prefix,
-         [&] (const InterestFilter&, const Interest& i) {
-            Name interestName = i.getName();
-            interestName.append(timeMarker);
-            BOOST_REQUIRE_EQUAL(encryptionKeys.find(interestName) !=
-                                encryptionKeys.end(), true);
-            face2->put(*(encryptionKeys[interestName]));
-            return;
-         },
-         RegisterPrefixSuccessCallback(),
-         [] (const Name&, const std::string& e) { });
+  face2.setInterestFilter(prefix,
+        [&] (const InterestFilter&, const Interest& i) {
+           Name interestName = i.getName();
+           interestName.append(timeMarker);
+           BOOST_REQUIRE_EQUAL(encryptionKeys.find(interestName) !=
+                               encryptionKeys.end(), true);
+           face2.put(*(encryptionKeys[interestName]));
+           return;
+        },
+        RegisterPrefixSuccessCallback(),
+        [] (const Name&, const std::string& e) { });
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   Verify that content key is correctly encrypted for each domain, and the
   produce method encrypts provided data with the same content key.
   */
-  Producer producer(prefix, suffix, *face1, dbDir);
+  Producer producer(prefix, suffix, face1, dbDir);
   ProducerDB testDb(dbDir);
   Buffer contentKey;
 
@@ -296,32 +296,32 @@ BOOST_AUTO_TEST_CASE(ContentKeySearch)
   createEncryptionKey(expectedInterest, timeMarkerThirdHop);
 
   size_t requestCount = 0;
-  face2->setInterestFilter(prefix,
-         [&] (const InterestFilter&, const Interest& i) {
-            BOOST_REQUIRE_EQUAL(i.getName(), expectedInterest);
-            Name interestName = i.getName();
-            switch(requestCount) {
-              case 0:
-                interestName.append(timeMarkerFirstHop);
-                break;
+  face2.setInterestFilter(prefix,
+        [&] (const InterestFilter&, const Interest& i) {
+           BOOST_REQUIRE_EQUAL(i.getName(), expectedInterest);
+           Name interestName = i.getName();
+           switch(requestCount) {
+             case 0:
+               interestName.append(timeMarkerFirstHop);
+               break;
 
-              case 1:
-                interestName.append(timeMarkerSecondHop);
-                break;
+             case 1:
+               interestName.append(timeMarkerSecondHop);
+               break;
 
-              case 2:
-                interestName.append(timeMarkerThirdHop);
-                break;
+             case 2:
+               interestName.append(timeMarkerThirdHop);
+               break;
 
-              default:
-                break;
-            }
-            face2->put(*(encryptionKeys[interestName]));
-            requestCount++;
-            return;
-         },
-         RegisterPrefixSuccessCallback(),
-         [] (const Name&, const std::string& e) { });
+             default:
+               break;
+           }
+           face2.put(*(encryptionKeys[interestName]));
+           requestCount++;
+           return;
+        },
+        RegisterPrefixSuccessCallback(),
+        [] (const Name&, const std::string& e) { });
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(ContentKeySearch)
   Verify that if a key is found, but not within the right timeslot, the search
   is refined until a valid timeslot is found.
   */
-  Producer producer(prefix, suffix, *face1, dbDir);
+  Producer producer(prefix, suffix, face1, dbDir);
   producer.createContentKey(testTime,
           [&](const std::vector<Data>& result){
             BOOST_CHECK_EQUAL(requestCount, 3);
@@ -365,14 +365,14 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
   time::system_clock::TimePoint testTime = time::fromIsoString("20150101T100001");
 
   size_t timeoutCount = 0;
-  face2->setInterestFilter(prefix,
-         [&] (const InterestFilter&, const Interest& i) {
-            BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
-            timeoutCount++;
-            return;
-         },
-         RegisterPrefixSuccessCallback(),
-         [] (const Name&, const std::string& e) { });
+  face2.setInterestFilter(prefix,
+        [&] (const InterestFilter&, const Interest& i) {
+           BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
+           timeoutCount++;
+           return;
+        },
+        RegisterPrefixSuccessCallback(),
+        [] (const Name&, const std::string& e) { });
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
   Verify that if no response is received, the producer appropriately times out.
   The result vector should not contain elements that have timed out.
   */
-  Producer producer(prefix, suffix, *face1, dbDir);
+  Producer producer(prefix, suffix, face1, dbDir);
   producer.createContentKey(testTime,
           [&](const std::vector<Data>& result){
             BOOST_CHECK_EQUAL(timeoutCount, 4);
