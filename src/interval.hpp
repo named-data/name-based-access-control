@@ -49,7 +49,7 @@ public:
   /**
    * @brief Construction to create an object
    *
-   * @parameter isValid If isValid is true, the created interval is an empty interval
+   * @param isValid If isValid is true, the created interval is an empty interval
    */
   explicit
   Interval(bool isValid = false);
@@ -61,7 +61,7 @@ public:
    * @brief Check if the timestamp tp is in the interval
    * @pre this->isValid() == true
    *
-   * @parameter tp A timestamp
+   * @param tp A timestamp
    */
   bool
   covers(const TimeStamp& tp) const;

@@ -47,7 +47,7 @@ public:
   /**
    * @brief Create group manager
    *
-   * The namespace of group manager is /<prefix>/read/<dataType>/
+   * The namespace of group manager is /[prefix]/read/[dataType]/
    * The group management information (including user cert, schedule) is stored in a database
    * at @p dbPath.
    * The group key will be an RSA key with @p paramLength bits.

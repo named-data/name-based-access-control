@@ -20,16 +20,16 @@ ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/li
 
 VERSION = "0.0.1"
 APPNAME = "libndn-group-encrypt"
-BUGREPORT = "http://redmine.named-data.net/projects/gep"
-URL = "http://named-data.net/doc/ndn-group-encrypt/"
-GIT_TAG_PREFIX = "NDN-GROUP-ENCRYPT"
+PACKAGE_BUGREPORT = "http://redmine.named-data.net/projects/gep"
+PACKAGE_URL = "http://named-data.net/doc/ndn-group-encrypt/"
+GIT_TAG_PREFIX = "ndn-group-encrypt"
 
 from waflib import Logs, Utils, Context
 import os
 
 def options(opt):
     opt.load(['compiler_c', 'compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'default-compiler-flags'],
+    opt.load(['boost', 'default-compiler-flags', 'doxygen'],
              tooldir=['.waf-tools'])
 
     syncopt = opt.add_option_group ("NDN-GROUP-ENCRYPT Options")
@@ -40,7 +40,7 @@ def options(opt):
                        help='''build unit tests''')
 
 def configure(conf):
-    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags'])
+    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'doxygen'])
 
     if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
@@ -95,3 +95,86 @@ def build(bld):
         INCLUDEDIR   = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],
         VERSION      = VERSION,
         )
+
+def docs(bld):
+    from waflib import Options
+    Options.commands = ['doxygen'] + Options.commands
+
+def doxygen(bld):
+    version(bld)
+
+    if not bld.env.DOXYGEN:
+        Logs.error("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
+    else:
+        bld(features="subst",
+            name="doxygen-conf",
+            source=["docs/doxygen.conf.in",
+                    "docs/named_data_theme/named_data_footer-with-analytics.html.in"],
+            target=["docs/doxygen.conf",
+                    "docs/named_data_theme/named_data_footer-with-analytics.html"],
+            VERSION=VERSION,
+            HTML_FOOTER="../build/docs/named_data_theme/named_data_footer-with-analytics.html" \
+                          if os.getenv('GOOGLE_ANALYTICS', None) \
+                          else "../docs/named_data_theme/named_data_footer.html",
+            GOOGLE_ANALYTICS=os.getenv('GOOGLE_ANALYTICS', ""),
+            )
+
+        bld(features="doxygen",
+            doxyfile='docs/doxygen.conf',
+            use="doxygen-conf")
+
+def version(ctx):
+    if getattr(Context.g_module, 'VERSION_BASE', None):
+        return
+
+    Context.g_module.VERSION_BASE = Context.g_module.VERSION
+    Context.g_module.VERSION_SPLIT = [v for v in VERSION_BASE.split('.')]
+
+    didGetVersion = False
+    try:
+        cmd = ['git', 'describe', '--always', '--match', '%s*' % GIT_TAG_PREFIX]
+        p = Utils.subprocess.Popen(cmd, stdout=Utils.subprocess.PIPE,
+                                   stderr=None, stdin=None)
+        out = str(p.communicate()[0].strip())
+        didGetVersion = (p.returncode == 0 and out != "")
+        if didGetVersion:
+            if out.startswith(GIT_TAG_PREFIX):
+                Context.g_module.VERSION = out[len(GIT_TAG_PREFIX):]
+            else:
+                Context.g_module.VERSION = "%s-commit-%s" % (Context.g_module.VERSION_BASE, out)
+    except OSError:
+        pass
+
+    versionFile = ctx.path.find_node('VERSION')
+
+    if not didGetVersion and versionFile is not None:
+        try:
+            Context.g_module.VERSION = versionFile.read()
+            return
+        except (OSError, IOError):
+            pass
+
+    # version was obtained from git, update VERSION file if necessary
+    if versionFile is not None:
+        try:
+            version = versionFile.read()
+            if version == Context.g_module.VERSION:
+                return # no need to update
+        except (OSError, IOError):
+            Logs.warn("VERSION file exists, but not readable")
+    else:
+        versionFile = ctx.path.make_node('VERSION')
+
+    if versionFile is None:
+        return
+
+    try:
+        versionFile.write(Context.g_module.VERSION)
+    except (OSError, IOError):
+        Logs.warn("VERSION file is not writeable")
+
+def dist(ctx):
+    version(ctx)
+
+def distcheck(ctx):
+    version(ctx)

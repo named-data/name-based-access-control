@@ -72,10 +72,10 @@ public:
   /**
    * @brief Get get an interval that @p tp falls in
    *
-   * @parameter tp A timestamp
+   * @param tp A timestamp
    *
    * @return bool If the repetitive interval covers the @p tp, return true, otherwise false
-   * @return Interval Return the interval which @tp falls in
+   * @return Interval Return the interval which @p tp falls in
    */
   std::tuple<bool, Interval>
   getInterval(const TimeStamp& tp) const;
@@ -83,7 +83,7 @@ public:
   /**
    * @brief To store in std::set, class have to implement operator <
    *
-   * @parameter interval Interval which will be compared with
+   * @param interval Interval which will be compared with
    */
   bool
   operator<(const RepetitiveInterval& interval) const;

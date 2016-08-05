@@ -58,6 +58,7 @@ public:
   /**
    * @brief Send out the Interest packet to fetch content packet with @p dataName.
    *
+   * @param dataName name of the data packet to fetch
    * @param consumptionCallBack The callback when requested data is decrypted
    * @param errorCallBack The callback when error happens in consumption
    */
