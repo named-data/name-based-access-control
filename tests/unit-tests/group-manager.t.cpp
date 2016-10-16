@@ -358,6 +358,58 @@ BOOST_AUTO_TEST_CASE(GetGroupKey)
   BOOST_CHECK_EQUAL(manager.getGroupKey(tp3).size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(GetGroupKeyWithoutRegeneration)
+{
+  // create the group manager database
+  std::string dbDir = tmpPath.c_str();
+  dbDir += "/manager-group-key-test.db";
+
+  // create group manager
+  GroupManager manager(Name("Alice"), Name("data_type"), dbDir, 1024, 1);
+  setManager(manager);
+
+  // get data list from group manager
+  TimeStamp tp1(from_iso_string("20150825T093000"));
+  std::list<Data> result1 = manager.getGroupKey(tp1);
+
+  BOOST_CHECK_EQUAL(result1.size(), 4);
+
+  // first data contain the group encrypt key(public key)
+  std::list<Data>::iterator dataIterator1 = result1.begin();
+  BOOST_CHECK_EQUAL(dataIterator1->getName().toUri(),
+                    "/Alice/READ/data_type/E-KEY/20150825T090000/20150825T100000");
+  EncryptKey<algo::Rsa> groupEKey1(Buffer(dataIterator1->getContent().value(),
+                                         dataIterator1->getContent().value_size()));
+
+  // second data
+  dataIterator1++;
+  BOOST_CHECK_EQUAL(dataIterator1->getName().toUri(),
+                    "/Alice/READ/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberA/ksk-123");
+
+  // add new members to the database
+  Block dataBlock = cert.wireEncode();
+  Data memberD(dataBlock);
+  memberD.setName(Name("/ndn/memberD/KEY/ksk-123/ID-CERT/123"));
+  manager.addMember("schedule1", memberD);
+
+  std::list<Data> result2 = manager.getGroupKey(tp1, false);
+  BOOST_CHECK_EQUAL(result2.size(), 5);
+
+  // check the new EKey is the same with the previous one
+  std::list<Data>::iterator dataIterator2 = result2.begin();
+  BOOST_CHECK_EQUAL(dataIterator2->getName().toUri(),
+                    "/Alice/READ/data_type/E-KEY/20150825T090000/20150825T100000");
+  EncryptKey<algo::Rsa> groupEKey2(Buffer(dataIterator2->getContent().value(),
+                                         dataIterator2->getContent().value_size()));
+  BOOST_CHECK_EQUAL_COLLECTIONS(groupEKey1.getKeyBits().begin(), groupEKey1.getKeyBits().end(),
+                                groupEKey2.getKeyBits().begin(), groupEKey2.getKeyBits().end());
+
+  // second data
+  dataIterator2++;
+  BOOST_CHECK_EQUAL(dataIterator2->getName().toUri(),
+                    "/Alice/READ/data_type/D-KEY/20150825T090000/20150825T100000/FOR/ndn/memberA/ksk-123");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace test

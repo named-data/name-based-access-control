@@ -62,14 +62,17 @@ public:
    *
    * This method creates a group key if it does not
    * exist, and encrypts the key using public key of
-   * all eligible members
+   * all eligible members.
+   *
+   * @p needRegenerate should be true if 1.first time to call 2.a member was removed
+   *                   and it can be false if 1.not the first time to call 2.a member was added
    *
    * @returns The group key (the first one is the
    *          public key, and the rest are encrypted
    *          private key.
    */
   std::list<Data>
-  getGroupKey(const TimeStamp& timeslot);
+  getGroupKey(const TimeStamp& timeslot, bool needRegenerate = true);
 
   /// @brief Add @p schedule with @p scheduleName
   void
@@ -94,6 +97,7 @@ public:
   /// @brief Update @p member with a schedule of @p schedule Name.
   void
   updateMemberSchedule(const Name& identity, const std::string& scheduleName);
+
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
@@ -120,6 +124,22 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Data
   createDKeyData(const std::string& startTs, const std::string& endTs, const Name& keyName,
                  const Buffer& priKeyBuf, const Buffer& certKey);
+
+  /// @brief Add a EKey to the database
+  void
+  addEKey(const Name& eKeyName, const Buffer& pubKey, const Buffer& priKey);
+
+  /// @brief Get the key pair from the database
+  std::tuple<Buffer, Buffer>
+  getEKey(const Name& eKeyName);
+
+  /// @brief Delete a EKey to the database
+  void
+  deleteEKey(const Name& eKeyName);
+
+  /// @brief The method should be called periodically because the table size will keep growing
+  void
+  cleanEKeys();
 
 private:
   Name m_namespace;

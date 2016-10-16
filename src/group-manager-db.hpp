@@ -164,6 +164,42 @@ public:
   void
   deleteMember(const Name& identity);
 
+  /**
+   * @brief Check if there is a EKey with name @p eKeyName in database
+   */
+  bool
+  hasEKey(const Name& eKeyName);
+
+  /**
+   * @brief Add a EKey with name @p eKeyName to database
+   *
+   * @p pubKey The public Key of the group key pair
+   * @p priKey The private Key of the group key pair
+   */
+  void
+  addEKey(const Name& eKeyName, const Buffer& pubKey, const Buffer& priKey);
+
+  /**
+   * @brief Get the group key pair from database
+   */
+  std::tuple<Buffer, Buffer>
+  getEKey(const Name& eKeyName);
+
+  /**
+   * @brief Delete all the EKeys in the database
+   *
+   * The database will keep growing because EKeys will keep being added. The method
+   * should be called periodically
+   */
+  void
+  cleanEKeys();
+
+  /**
+   * @brief Delete a EKey with name @p eKeyName from database
+   */
+  void
+  deleteEKey(const Name& eKeyName);
+
 private:
   class Impl;
   unique_ptr<Impl> m_impl;

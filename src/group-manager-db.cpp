@@ -55,7 +55,17 @@ static const std::string INITIALIZATION =
   "      ON UPDATE CASCADE                            \n"
   "  );                                               \n"
   "CREATE UNIQUE INDEX IF NOT EXISTS                  \n"
-  "   memNameIndex ON members(member_name);           \n";
+  "   memNameIndex ON members(member_name);           \n"
+  "                                                   \n"
+  "CREATE TABLE IF NOT EXISTS                         \n"
+  "  ekeys(                                           \n"
+  "    ekey_id             INTEGER PRIMARY KEY,       \n"
+  "    ekey_name           BLOB NOT NULL,             \n"
+  "    pub_key             BLOB NOT NULL,             \n"
+  "    pri_key             BLOB NOT NULL              \n"
+  "  );                                               \n"
+  "CREATE UNIQUE INDEX IF NOT EXISTS                  \n"
+  "   ekeyNameIndex ON ekeys(ekey_name);              \n";
 
 class GroupManagerDB::Impl
 {
@@ -316,6 +326,61 @@ GroupManagerDB::deleteMember(const Name& identity)
   Sqlite3Statement statement(m_impl->m_database,
                              "DELETE FROM members WHERE member_name=?");
   statement.bind(1, identity.wireEncode(), SQLITE_TRANSIENT);
+  statement.step();
+}
+
+bool
+GroupManagerDB::hasEKey(const Name& eKeyName)
+{
+  Sqlite3Statement statement(m_impl->m_database,
+                             "SELECT ekey_id FROM ekeys where ekey_name=?");
+  statement.bind(1, eKeyName.wireEncode(), SQLITE_TRANSIENT);
+  return (statement.step() == SQLITE_ROW);
+}
+
+void
+GroupManagerDB::addEKey(const Name& eKeyName, const Buffer& pubKey, const Buffer& priKey)
+{
+  Sqlite3Statement statement(m_impl->m_database,
+                             "INSERT INTO ekeys(ekey_name, pub_key, pri_key) values (?, ?, ?)");
+  statement.bind(1, eKeyName.wireEncode(), SQLITE_TRANSIENT);
+  statement.bind(2, pubKey.buf(), pubKey.size(), SQLITE_TRANSIENT);
+  statement.bind(3, priKey.buf(), priKey.size(), SQLITE_TRANSIENT);
+  if (statement.step() != SQLITE_DONE)
+    BOOST_THROW_EXCEPTION(Error("Cannot add the EKey to database"));
+}
+
+std::tuple<Buffer, Buffer>
+GroupManagerDB::getEKey(const Name& eKeyName)
+{
+  Sqlite3Statement statement(m_impl->m_database,
+                             "SELECT * FROM ekeys where ekey_name=?");
+  statement.bind(1, eKeyName.wireEncode(), SQLITE_TRANSIENT);
+
+  Buffer pubKey, priKey;
+  if (statement.step() == SQLITE_ROW) {
+    pubKey = Buffer(statement.getBlob(2), statement.getSize(2));
+    priKey = Buffer(statement.getBlob(3), statement.getSize(3));
+  }
+  else {
+    BOOST_THROW_EXCEPTION(Error("Cannot get the result from database"));
+  }
+  return std::make_tuple(pubKey, priKey);
+}
+
+void
+GroupManagerDB::cleanEKeys()
+{
+  Sqlite3Statement statement(m_impl->m_database, "DELETE FROM ekeys");
+  statement.step();
+}
+
+void
+GroupManagerDB::deleteEKey(const Name& eKeyName)
+{
+  Sqlite3Statement statement(m_impl->m_database,
+                             "DELETE FROM ekeys WHERE ekey_name=?");
+  statement.bind(1, eKeyName.wireEncode(), SQLITE_TRANSIENT);
   statement.step();
 }
 

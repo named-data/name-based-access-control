@@ -39,7 +39,7 @@ GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::
 }
 
 std::list<Data>
-GroupManager::getGroupKey(const TimeStamp& timeslot)
+GroupManager::getGroupKey(const TimeStamp& timeslot, bool needRegenerate)
 {
   std::map<Name, Buffer> memberKeys;
   std::list<Data> result;
@@ -54,7 +54,19 @@ GroupManager::getGroupKey(const TimeStamp& timeslot)
 
   // generate the pri key and pub key
   Buffer priKeyBuf, pubKeyBuf;
-  generateKeyPairs(priKeyBuf, pubKeyBuf);
+  Name eKeyName(m_namespace);
+  eKeyName.append(NAME_COMPONENT_E_KEY).append(startTs).append(endTs);
+
+  if (!needRegenerate && m_db.hasEKey(eKeyName)) {
+    std::tie(pubKeyBuf, priKeyBuf) = getEKey(eKeyName);
+  }
+  else {
+    generateKeyPairs(priKeyBuf, pubKeyBuf);
+    if (m_db.hasEKey(eKeyName)) {
+      deleteEKey(eKeyName);
+    }
+    addEKey(eKeyName, pubKeyBuf, priKeyBuf);
+  }
 
   // add the first element to the result
   // E-KEY (public key) data packet name convention:
@@ -198,6 +210,30 @@ GroupManager::createDKeyData(const std::string& startTs, const std::string& endT
                     certKey.buf(), certKey.size(), eparams);
   m_keyChain.sign(data);
   return data;
+}
+
+void
+GroupManager::addEKey(const Name& eKeyName, const Buffer& pubKey, const Buffer& priKey)
+{
+  m_db.addEKey(eKeyName, pubKey, priKey);
+}
+
+std::tuple<Buffer, Buffer>
+GroupManager::getEKey(const Name& eKeyName)
+{
+  return m_db.getEKey(eKeyName);
+}
+
+void
+GroupManager::deleteEKey(const Name& eKeyName)
+{
+  m_db.deleteEKey(eKeyName);
+}
+
+void
+GroupManager::cleanEKeys()
+{
+  m_db.cleanEKeys();
 }
 
 } // namespace ndn
