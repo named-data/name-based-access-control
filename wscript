@@ -29,7 +29,7 @@ import os
 
 def options(opt):
     opt.load(['compiler_c', 'compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'default-compiler-flags', 'doxygen'],
+    opt.load(['boost', 'default-compiler-flags', 'sanitizers', 'doxygen'],
              tooldir=['.waf-tools'])
 
     syncopt = opt.add_option_group ("NDN-GROUP-ENCRYPT Options")
@@ -40,7 +40,7 @@ def options(opt):
                        help='''build unit tests''')
 
 def configure(conf):
-    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'doxygen'])
+    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'sanitizers', 'doxygen'])
 
     if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)

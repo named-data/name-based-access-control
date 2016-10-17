@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(EncryptionDecryption)
 
   EncryptParams eparams(tlv::AlgorithmAesEcb, 16);
 
-  DecryptKey<Aes> decryptKey(std::move(Buffer(key, sizeof(key))));
+  DecryptKey<Aes> decryptKey(Buffer(key, sizeof(key)));
   EncryptKey<Aes> encryptKey = Aes::deriveEncryptKey(decryptKey.getKeyBits());
 
   // check if loading key and key derivation

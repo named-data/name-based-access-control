@@ -42,7 +42,7 @@ Aes::generateKey(RandomNumberGenerator& rng, AesKeyParams& params)
   SecByteBlock key(0x00, params.getKeySize() >> 3);  // Converting key bit-size to byte-size.
   rng.GenerateBlock(key.data(), key.size());
 
-  DecryptKey<Aes> decryptKey(std::move(Buffer(key.data(), key.size())));
+  DecryptKey<Aes> decryptKey(Buffer(key.data(), key.size()));
   return decryptKey;
 }
 
