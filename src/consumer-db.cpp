@@ -38,11 +38,7 @@ static const std::string INITIALIZATION =
   "    key_buf             BLOB NOT NULL              \n"
   "  );                                               \n"
   "CREATE UNIQUE INDEX IF NOT EXISTS                  \n"
-  "   KeyNameIndex ON decryptionkeys(key_name);       \n"
-  "CREATE TABLE IF NOT EXISTS                         \n"
-  "  consumer(                                        \n"
-  "    prefix              BLOB PRIMARY KEY           \n"
-  "  );                                               \n";
+  "   KeyNameIndex ON decryptionkeys(key_name);       \n";
 
 class ConsumerDB::Impl
 {
