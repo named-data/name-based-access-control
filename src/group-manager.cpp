@@ -24,6 +24,7 @@
 #include "encrypted-content.hpp"
 
 #include <map>
+#include <ndn-cxx/security/v1/identity-certificate.hpp>
 
 namespace ndn {
 namespace gep {
@@ -109,7 +110,7 @@ GroupManager::updateSchedule(const std::string& scheduleName, const Schedule& sc
 void
 GroupManager::addMember(const std::string& scheduleName, const Data& memCert)
 {
-  IdentityCertificate cert(memCert);
+  security::v1::IdentityCertificate cert(memCert);
   m_db.addMember(scheduleName, cert.getPublicKeyName(), cert.getPublicKeyInfo().get());
 }
 
