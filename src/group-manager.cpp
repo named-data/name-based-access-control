@@ -62,9 +62,9 @@ GroupManager::getGroupKey(const TimeStamp& timeslot, bool needRegenerate)
   }
   else {
     generateKeyPairs(priKeyBuf, pubKeyBuf);
-    if (m_db.hasEKey(eKeyName)) {
-      deleteEKey(eKeyName);
-    }
+    // if (m_db.hasEKey(eKeyName)) {
+    //   deleteEKey(eKeyName);
+    // }
     addEKey(eKeyName, pubKeyBuf, priKeyBuf);
   }
 
@@ -109,8 +109,8 @@ GroupManager::updateSchedule(const std::string& scheduleName, const Schedule& sc
 void
 GroupManager::addMember(const std::string& scheduleName, const Data& memCert)
 {
-  IdentityCertificate cert(memCert);
-  m_db.addMember(scheduleName, cert.getPublicKeyName(), cert.getPublicKeyInfo().get());
+  security::v2::Certificate cert(memCert);
+  m_db.addMember(scheduleName, cert.getKeyName(), cert.getPublicKey());
 }
 
 void
