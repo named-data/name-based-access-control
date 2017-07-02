@@ -62,9 +62,9 @@ GroupManager::getGroupKey(const TimeStamp& timeslot, bool needRegenerate)
   }
   else {
     generateKeyPairs(priKeyBuf, pubKeyBuf);
-    if (m_db.hasEKey(eKeyName)) {
-      deleteEKey(eKeyName);
-    }
+    // if (m_db.hasEKey(eKeyName)) {
+    //   deleteEKey(eKeyName);
+    // }
     addEKey(eKeyName, pubKeyBuf, priKeyBuf);
   }
 
