@@ -20,6 +20,8 @@
  * @author Yingdi Yu <yuyingdi@gmail.com>
  */
 
+#include <iostream>
+
 #include "producer.hpp"
 #include "random-number-generator.hpp"
 #include "algo/encryptor.hpp"
@@ -133,6 +135,49 @@ Producer::createContentKey(const system_clock::TimePoint& timeslot,
   return contentKeyName;
 }
 
+
+void Producer::encryptContentKey(const time::system_clock::TimePoint& timeslot,
+                                 const ProducerEKeyCallback& callback,
+                                 const ErrorCallBack& errorCallback)
+{
+  // Check if we have created the content key before.
+  if (!m_db.hasContentKey(timeslot)) 
+  {
+    std::cout << "[NAC] Creating new CKey" << std::endl;
+    createContentKey(timeslot, callback, errorCallback);
+  }
+  else 
+  {
+    std::cout << "[NAC] Encrypting existing c-key" << std::endl;
+
+    // Now we need to retrieve the E-KEYs for content key encryption.
+    uint64_t timeCount = toUnixTimestamp(timeslot).count();
+    m_keyRequests.insert({timeCount, KeyRequest(m_ekeyInfo.size())});
+    KeyRequest& keyRequest = m_keyRequests.at(timeCount);
+
+    // Check if current E-KEYs can cover the content key.
+    Exclude timeRange;
+    timeRange.excludeAfter(name::Component(time::toIsoString(timeslot)));
+    std::unordered_map<Name, KeyInfo>::iterator it;
+    for (it = m_ekeyInfo.begin(); it != m_ekeyInfo.end(); ++it) {
+      // for each current E-KEY
+      if (timeslot < it->second.beginTimeslot || timeslot >= it->second.endTimeslot) {
+        // current E-KEY cannot cover the content key, retrieve one.
+        keyRequest.repeatAttempts[it->first] = 0;
+        sendKeyInterest(Interest(it->first).setExclude(timeRange).setChildSelector(1),
+                        timeslot, callback, errorCallback);
+      }
+      else {
+        // current E-KEY can cover the content key, encrypt the content key directly.
+        Name eKeyName(it->first);
+        eKeyName.append(time::toIsoString(it->second.beginTimeslot));
+        eKeyName.append(time::toIsoString(it->second.endTimeslot));
+        encryptContentKey(it->second.keyBits, eKeyName, timeslot, callback, errorCallback);
+      }
+    }
+  }
+}
+
 void
 Producer::defaultErrorCallBack(const ErrorCode& code, const std::string& msg)
 {
@@ -168,6 +213,7 @@ Producer::sendKeyInterest(const Interest& interest,
   if (m_keyRetrievalLink.getDelegations().size() > 0) {
     request.setLink(m_keyRetrievalLink.wireEncode());
   }
+  std::cout << "[NAC] sending: " << request.toUri() << std::endl;
   m_face.expressInterest(request,
                          std::bind(&Producer::handleCoveringKey, this, _1, _2,
                                    timeslot, callback, errorCallback),
@@ -175,6 +221,7 @@ Producer::sendKeyInterest(const Interest& interest,
                                    timeslot, callback, errorCallback),
                          std::bind(&Producer::handleTimeout, this, _1,
                                    timeslot, callback, errorCallback));
+  std::cout << "[NAC] DEBUG sent: " << request.toUri() << std::endl;
 }
 
 void
@@ -183,6 +230,7 @@ Producer::handleCoveringKey(const Interest& interest, const Data& data,
                             const ProducerEKeyCallback& callback,
                             const ErrorCallBack& errorCallback)
 {
+  std::cout << "[NAC] DEBUG handleCoveringKey: " << interest.toUri() << std::endl;
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
   KeyRequest& keyRequest = m_keyRequests.at(timeCount);
 
@@ -220,6 +268,7 @@ Producer::handleTimeout(const Interest& interest,
                         const ProducerEKeyCallback& callback,
                         const ErrorCallBack& errorCallback)
 {
+  std::cout << "[NAC] DEBUG handleTimeout: " << interest.toUri() << std::endl;
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
   KeyRequest& keyRequest = m_keyRequests.at(timeCount);
 
@@ -242,6 +291,8 @@ Producer::handleNack(const Interest& interest,
                      const ProducerEKeyCallback& callback,
                      const ErrorCallBack& errorCallback)
 {
+  std::cout << "[NAC] DEBUG handleNack: " << interest.toUri() << std::endl;
+  std::cout<<"[NAC] Got NACK for " << interest.toUri() << std::endl;
   // we run out of options...
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
   updateKeyRequest(m_keyRequests.at(timeCount), timeCount, callback);
