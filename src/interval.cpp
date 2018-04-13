@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "interval.hpp"
@@ -33,8 +33,7 @@ Interval::Interval(bool isValid)
 {
 }
 
-Interval::Interval(const TimeStamp& startTime,
-                   const TimeStamp& endTime)
+Interval::Interval(const TimeStamp& startTime, const TimeStamp& endTime)
   : m_startTime(startTime)
   , m_endTime(endTime)
   , m_isValid(true)
@@ -53,7 +52,7 @@ Interval::covers(const TimeStamp& tp) const
 }
 
 Interval&
-Interval::operator &&(const Interval& interval)
+Interval::operator&&(const Interval& interval)
 {
   BOOST_ASSERT(isValid() && interval.isValid());
 
@@ -80,7 +79,7 @@ Interval::operator &&(const Interval& interval)
 }
 
 Interval&
-Interval::operator ||(const Interval& interval)
+Interval::operator||(const Interval& interval)
 {
   BOOST_ASSERT(this->isValid() && interval.isValid());
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -23,11 +23,11 @@
 #ifndef NDN_GEP_PRODUCER_HPP
 #define NDN_GEP_PRODUCER_HPP
 
-#include "producer-db.hpp"
 #include "error-code.hpp"
+#include "producer-db.hpp"
 
-#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndn {
 namespace gep {
@@ -41,16 +41,19 @@ typedef function<void(const std::vector<Data>&)> ProducerEKeyCallback;
 class Producer
 {
 public:
-  struct KeyInfo {
+  struct KeyInfo
+  {
     time::system_clock::TimePoint beginTimeslot;
     time::system_clock::TimePoint endTimeslot;
     Buffer keyBits;
   };
 
-  struct KeyRequest {
+  struct KeyRequest
+  {
     KeyRequest(size_t interests)
-    : interestCount(interests)
-    {}
+      : interestCount(interests)
+    {
+    }
     size_t interestCount;
     std::unordered_map<Name, size_t> repeatAttempts;
     std::vector<Data> encryptedKeys;
@@ -71,8 +74,10 @@ public:
    * @p face, and will re-try for at most @p repeatAttemps times when
    * E-KEY retrieval fails.
    */
-  Producer(const Name& prefix, const Name& dataType,
-           Face& face, const std::string& dbPath,
+  Producer(const Name& prefix,
+           const Name& dataType,
+           Face& face,
+           const std::string& dbPath,
            uint8_t repeatAttempts = 3,
            const Link& keyRetrievalLink = NO_LINK);
 
@@ -91,6 +96,7 @@ public:
                    const ProducerEKeyCallback& callback,
                    const ErrorCallBack& errorCallBack = Producer::defaultErrorCallBack);
 
+
   /**
    * @brief Produce an data packet encrypted using the content key corresponding @p timeslot
    *
@@ -99,8 +105,10 @@ public:
    * In case of any error, @p errorCallBack will be invoked.
    */
   void
-  produce(Data& data, const time::system_clock::TimePoint& timeslot,
-          const uint8_t* content, size_t contentLen,
+  produce(Data& data,
+          const time::system_clock::TimePoint& timeslot,
+          const uint8_t* content,
+          size_t contentLen,
           const ErrorCallBack& errorCallBack = Producer::defaultErrorCallBack);
 
 public:
@@ -114,7 +122,6 @@ public:
   defaultErrorCallBack(const ErrorCode& code, const std::string& msg);
 
 private:
-
   /**
    * @brief Send interest for E-KEY
    *
@@ -138,7 +145,8 @@ private:
    * of any error, invoke @p errorCallBack.
    */
   void
-  handleCoveringKey(const Interest& interest, const Data& data,
+  handleCoveringKey(const Interest& interest,
+                    const Data& data,
                     const time::system_clock::TimePoint& timeslot,
                     const ProducerEKeyCallback& callback,
                     const ErrorCallBack& errorCallBack = Producer::defaultErrorCallBack);
@@ -176,8 +184,7 @@ private:
    * If the count decrease to 0, invoke @p callback.
    */
   void
-  updateKeyRequest(KeyRequest& keyRequest, uint64_t timeCount,
-                   const ProducerEKeyCallback& callback);
+  updateKeyRequest(KeyRequest& keyRequest, uint64_t timeCount, const ProducerEKeyCallback& callback);
 
   /**
    * @brief Encrypts C-KEY for @p timeslot using @p encryptionKey of @p eKeyName
@@ -188,7 +195,8 @@ private:
    * @return true if encryption succeeds, otherwise false.
    */
   bool
-  encryptContentKey(const Buffer& encryptionKey, const Name& eKeyName,
+  encryptContentKey(const Buffer& encryptionKey,
+                    const Name& eKeyName,
                     const time::system_clock::TimePoint& timeslot,
                     const ProducerEKeyCallback& callback,
                     const ErrorCallBack& errorCallback = Producer::defaultErrorCallBack);

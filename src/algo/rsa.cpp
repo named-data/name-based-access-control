@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of gep (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of gep authors and contributors.
@@ -17,111 +17,66 @@
  * gep, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <ndn-cxx/encoding/buffer-stream.hpp>
 #include "rsa.hpp"
 #include "error.hpp"
+#include <ndn-cxx/encoding/buffer-stream.hpp>
+#include <ndn-cxx/security/transform/private-key.hpp>
+#include <ndn-cxx/security/transform/public-key.hpp>
 
 namespace ndn {
 namespace gep {
 namespace algo {
 
-using namespace CryptoPP;
-
-static Buffer
-transform(SimpleProxyFilter* filter, const uint8_t* data, size_t dataLen)
-{
-  OBufferStream obuf;
-  filter->Attach(new FileSink(obuf));
-
-  StringSource pipe(data, dataLen, true, filter);
-  return *(obuf.buf());
-}
-
 DecryptKey<Rsa>
-Rsa::generateKey(RandomNumberGenerator& rng, RsaKeyParams& params)
+Rsa::generateKey(RsaKeyParams& params)
 {
-  RSA::PrivateKey privateKey;
-  privateKey.GenerateRandomWithKeySize(rng, params.getKeySize());
+  auto privateKey = security::transform::generatePrivateKey(params);
 
-  OBufferStream obuf;
-  privateKey.Save(FileSink(obuf).Ref());
+  OBufferStream os;
+  privateKey->savePkcs1(os);
 
-  DecryptKey<Rsa> decryptKey(std::move(*obuf.buf()));
+  DecryptKey<Rsa> decryptKey(std::move(*os.buf()));
   return decryptKey;
 }
 
 EncryptKey<Rsa>
 Rsa::deriveEncryptKey(const Buffer& keyBits)
 {
-  RSA::PrivateKey privateKey;
+  security::transform::PrivateKey sKey;
+  sKey.loadPkcs1(keyBits.get<uint8_t>(), keyBits.size());
 
-  ByteQueue keyQueue;
-  keyQueue.LazyPut(keyBits.get(), keyBits.size());
-  privateKey.Load(keyQueue);
+  ConstBufferPtr pKeyBits = sKey.derivePublicKey();
+  security::transform::PublicKey pKey;
+  pKey.loadPkcs8(pKeyBits->data(), pKeyBits->size());
 
-  RSA::PublicKey publicKey(privateKey);
+  OBufferStream os;
+  pKey.savePkcs8(os);
 
-  OBufferStream obuf;
-  publicKey.Save(FileSink(obuf).Ref());
-
-  EncryptKey<Rsa> encryptKey(std::move(*obuf.buf()));
+  EncryptKey<Rsa> encryptKey(std::move(*os.buf()));
   return encryptKey;
 }
 
 Buffer
 Rsa::decrypt(const uint8_t* key, size_t keyLen,
-             const uint8_t* payload, size_t payloadLen,
-             const EncryptParams& params)
+             const uint8_t* payload, size_t payloadLen)
 {
-  AutoSeededRandomPool rng;
-  RSA::PrivateKey privateKey;
 
-  ByteQueue keyQueue;
-  keyQueue.LazyPut(key, keyLen);
-  privateKey.Load(keyQueue);
+  security::transform::PrivateKey sKey;
+  sKey.loadPkcs1(key, keyLen);
 
-  switch (params.getAlgorithmType()) {
-    case tlv::AlgorithmRsaPkcs: {
-      RSAES_PKCS1v15_Decryptor decryptor_pkcs1v15(privateKey);
-      PK_DecryptorFilter* filter_pkcs1v15 = new PK_DecryptorFilter(rng, decryptor_pkcs1v15);
-      return transform(filter_pkcs1v15, payload, payloadLen);
-    }
-    case tlv::AlgorithmRsaOaep: {
-      RSAES_OAEP_SHA_Decryptor decryptor_oaep_sha(privateKey);
-      PK_DecryptorFilter* filter_oaep_sha = new PK_DecryptorFilter(rng, decryptor_oaep_sha);
-      return transform(filter_oaep_sha, payload, payloadLen);
-    }
-    default:
-      throw Error("unsupported padding scheme");
-  }
+  auto decrypted = sKey.decrypt(payload, payloadLen);
+  return *decrypted;
 }
 
 Buffer
 Rsa::encrypt(const uint8_t* key, size_t keyLen,
-             const uint8_t* payload, size_t payloadLen,
-             const EncryptParams& params)
+             const uint8_t* payload, size_t payloadLen)
 {
-  AutoSeededRandomPool rng;
-  RSA::PublicKey publicKey;
+  security::transform::PublicKey pKey;
+  pKey.loadPkcs8(key, keyLen);
 
-  ByteQueue keyQueue;
-  keyQueue.LazyPut(key, keyLen);
-  publicKey.Load(keyQueue);
-
-  switch (params.getAlgorithmType()) {
-    case tlv::AlgorithmRsaPkcs: {
-      RSAES_PKCS1v15_Encryptor encryptor_pkcs1v15(publicKey);
-      PK_EncryptorFilter* filter_pkcs1v15 = new PK_EncryptorFilter(rng, encryptor_pkcs1v15);
-      return transform(filter_pkcs1v15, payload, payloadLen);
-    }
-    case tlv::AlgorithmRsaOaep: {
-      RSAES_OAEP_SHA_Encryptor encryptor_oaep_sha(publicKey);
-      PK_EncryptorFilter* filter_oaep_sha = new PK_EncryptorFilter(rng, encryptor_oaep_sha);
-      return transform(filter_oaep_sha, payload, payloadLen);
-    }
-    default:
-      throw Error("unsupported padding scheme");
-  }
+  auto cipherText = pKey.encrypt(payload, payloadLen);
+  return *cipherText;
 }
 
 } // namespace algo

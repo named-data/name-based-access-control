@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "repetitive-interval.hpp"
@@ -34,7 +34,8 @@ BOOST_AUTO_TEST_CASE(Construction)
 {
   RepetitiveInterval repetitiveInterval1(from_iso_string("20150825T000000"),
                                          from_iso_string("20150825T000000"),
-                                         5, 10);
+                                         5,
+                                         10);
 
   BOOST_CHECK_EQUAL(to_iso_string(repetitiveInterval1.getStartDate()), "20150825T000000");
   BOOST_CHECK_EQUAL(to_iso_string(repetitiveInterval1.getEndDate()), "20150825T000000");
@@ -43,21 +44,30 @@ BOOST_AUTO_TEST_CASE(Construction)
 
   RepetitiveInterval repetitiveInterval2(from_iso_string("20150825T000000"),
                                          from_iso_string("20150827T000000"),
-                                         5, 10, 1, RepetitiveInterval::RepeatUnit::DAY);
+                                         5,
+                                         10,
+                                         1,
+                                         RepetitiveInterval::RepeatUnit::DAY);
 
   BOOST_CHECK_EQUAL(repetitiveInterval2.getNRepeats(), 1);
   BOOST_CHECK(repetitiveInterval2.getRepeatUnit() == RepetitiveInterval::RepeatUnit::DAY);
 
   RepetitiveInterval repetitiveInterval3(from_iso_string("20150825T000000"),
                                          from_iso_string("20151227T000000"),
-                                         5, 10, 2, RepetitiveInterval::RepeatUnit::MONTH);
+                                         5,
+                                         10,
+                                         2,
+                                         RepetitiveInterval::RepeatUnit::MONTH);
 
   BOOST_CHECK_EQUAL(repetitiveInterval3.getNRepeats(), 2);
   BOOST_CHECK(repetitiveInterval3.getRepeatUnit() == RepetitiveInterval::RepeatUnit::MONTH);
 
   RepetitiveInterval repetitiveInterval4(from_iso_string("20150825T000000"),
                                          from_iso_string("20301227T000000"),
-                                         5, 10, 5, RepetitiveInterval::RepeatUnit::YEAR);
+                                         5,
+                                         10,
+                                         5,
+                                         RepetitiveInterval::RepeatUnit::YEAR);
 
   BOOST_CHECK_EQUAL(repetitiveInterval4.getNRepeats(), 5);
   BOOST_CHECK(repetitiveInterval4.getRepeatUnit() == RepetitiveInterval::RepeatUnit::YEAR);
@@ -74,20 +84,23 @@ BOOST_AUTO_TEST_CASE(CheckCoverTimePoint)
 
   RepetitiveInterval repetitiveInterval1(from_iso_string("20150825T000000"),
                                          from_iso_string("20150925T000000"),
-                                         5, 10, 2, RepetitiveInterval::RepeatUnit::DAY);
+                                         5,
+                                         10,
+                                         2,
+                                         RepetitiveInterval::RepeatUnit::DAY);
   Interval resultInterval;
   bool isPositive = false;
 
   TimeStamp tp1 = from_iso_string("20150825T050000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval1.getInterval(tp1);
+  std::tie(isPositive, resultInterval) = repetitiveInterval1.getInterval(tp1);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
 
   TimeStamp tp2 = from_iso_string("20150902T060000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval1.getInterval(tp2);
+  std::tie(isPositive, resultInterval) = repetitiveInterval1.getInterval(tp2);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150902T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150902T100000");
@@ -100,21 +113,24 @@ BOOST_AUTO_TEST_CASE(CheckCoverTimePoint)
 
   RepetitiveInterval repetitiveInterval2(from_iso_string("20150825T000000"),
                                          from_iso_string("20160825T000000"),
-                                         5, 10, 2, RepetitiveInterval::RepeatUnit::MONTH);
+                                         5,
+                                         10,
+                                         2,
+                                         RepetitiveInterval::RepeatUnit::MONTH);
 
   TimeStamp tp4 = from_iso_string("20150825T050000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval2.getInterval(tp4);
+  std::tie(isPositive, resultInterval) = repetitiveInterval2.getInterval(tp4);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
 
   TimeStamp tp5 = from_iso_string("20151025T060000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval2.getInterval(tp5);
+  std::tie(isPositive, resultInterval) = repetitiveInterval2.getInterval(tp5);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20151025T050000");
-  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()),  "20151025T100000");
+  BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20151025T100000");
 
   TimeStamp tp6 = from_iso_string("20151226T050000");
 
@@ -128,18 +144,21 @@ BOOST_AUTO_TEST_CASE(CheckCoverTimePoint)
 
   RepetitiveInterval repetitiveInterval3(from_iso_string("20150825T000000"),
                                          from_iso_string("20300825T000000"),
-                                         5, 10, 3, RepetitiveInterval::RepeatUnit::YEAR);
+                                         5,
+                                         10,
+                                         3,
+                                         RepetitiveInterval::RepeatUnit::YEAR);
 
   TimeStamp tp8 = from_iso_string("20150825T050000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval3.getInterval(tp8);
+  std::tie(isPositive, resultInterval) = repetitiveInterval3.getInterval(tp8);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20150825T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20150825T100000");
 
   TimeStamp tp9 = from_iso_string("20180825T060000");
 
-  std::tie(isPositive,resultInterval) = repetitiveInterval3.getInterval(tp9);
+  std::tie(isPositive, resultInterval) = repetitiveInterval3.getInterval(tp9);
   BOOST_CHECK_EQUAL(isPositive, true);
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getStartTime()), "20180825T050000");
   BOOST_CHECK_EQUAL(to_iso_string(resultInterval.getEndTime()), "20180825T100000");
@@ -154,27 +173,21 @@ BOOST_AUTO_TEST_CASE(CheckCoverTimePoint)
   BOOST_CHECK(std::get<0>(repetitiveInterval3.getInterval(tp12)) == false);
 }
 
-const uint8_t REPETITIVE_INTERVAL[] = {
-  0x8c, 0x2e, // RepetitiveInterval
-    0x86, 0x0f,
-      0x32, 0x30, 0x31, 0x35, 0x30, 0x38, 0x32, 0x35, 0x54, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
-    0x87, 0x0f,
-      0x32, 0x30, 0x31, 0x35, 0x30, 0x39, 0x32, 0x31, 0x54, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
-    0x88, 0x01,
-      0x05,
-    0x89, 0x01,
-      0x0a,
-    0x8a, 0x01,
-      0x04,
-    0x8b, 0x01,
-      0x01
-};
+const uint8_t REPETITIVE_INTERVAL[] = {0x8c, 0x2e, // RepetitiveInterval
+                                       0x86, 0x0f, 0x32, 0x30, 0x31, 0x35, 0x30, 0x38, 0x32, 0x35,
+                                       0x54, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x87, 0x0f, 0x32,
+                                       0x30, 0x31, 0x35, 0x30, 0x39, 0x32, 0x31, 0x54, 0x30, 0x30,
+                                       0x30, 0x30, 0x30, 0x30, 0x88, 0x01, 0x05, 0x89, 0x01, 0x0a,
+                                       0x8a, 0x01, 0x04, 0x8b, 0x01, 0x01};
 
 BOOST_AUTO_TEST_CASE(EncodeAndDecode)
 {
   RepetitiveInterval repetitiveInterval1(from_iso_string("20150825T000000"),
                                          from_iso_string("20150921T000000"),
-                                         5, 10, 4, RepetitiveInterval::RepeatUnit::DAY);
+                                         5,
+                                         10,
+                                         4,
+                                         RepetitiveInterval::RepeatUnit::DAY);
 
   Block block1 = repetitiveInterval1.wireEncode();
   Block block2(REPETITIVE_INTERVAL, sizeof(REPETITIVE_INTERVAL));
@@ -203,45 +216,75 @@ BOOST_AUTO_TEST_CASE(EncodeAndDecode)
 static bool
 check(const RepetitiveInterval& small, const RepetitiveInterval& big)
 {
-  return  (small < big && !(big < small));
+  return (small < big && !(big < small));
 }
 
 BOOST_AUTO_TEST_CASE(Comparison)
 {
   BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY),
                     RepetitiveInterval(from_iso_string("20150826T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY)));
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY)));
 
   BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY),
                     RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       6, 10, 2, RepetitiveInterval::RepeatUnit::DAY)));
+                                       6,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY)));
 
   BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY),
                     RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 11, 2, RepetitiveInterval::RepeatUnit::DAY)));
+                                       5,
+                                       11,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY)));
 
   BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY),
                     RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 3, RepetitiveInterval::RepeatUnit::DAY)));
+                                       5,
+                                       10,
+                                       3,
+                                       RepetitiveInterval::RepeatUnit::DAY)));
 
   BOOST_CHECK(check(RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::DAY),
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::DAY),
                     RepetitiveInterval(from_iso_string("20150825T000000"),
                                        from_iso_string("20150828T000000"),
-                                       5, 10, 2, RepetitiveInterval::RepeatUnit::MONTH)));
+                                       5,
+                                       10,
+                                       2,
+                                       RepetitiveInterval::RepeatUnit::MONTH)));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

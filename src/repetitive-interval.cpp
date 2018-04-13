@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,12 +16,11 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "repetitive-interval.hpp"
 #include "tlv.hpp"
-
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/util/concepts.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -78,15 +77,14 @@ RepetitiveInterval::wireEncode(EncodingImpl<TAG>& encoder) const
   size_t totalLength = 0;
 
   // RepeatUnit
-  totalLength += prependNonNegativeIntegerBlock(encoder, tlv::RepeatUnit,
-                                                  static_cast<size_t>(m_unit));
+  totalLength +=
+    prependNonNegativeIntegerBlock(encoder, tlv::RepeatUnit, static_cast<size_t>(m_unit));
   // NRepeat
   totalLength += prependNonNegativeIntegerBlock(encoder, tlv::NRepeats, m_nRepeats);
   // IntervalEndHour
   totalLength += prependNonNegativeIntegerBlock(encoder, tlv::IntervalEndHour, m_intervalEndHour);
   // IntervalStartHour
-  totalLength += prependNonNegativeIntegerBlock(encoder, tlv::IntervalStartHour,
-                                                m_intervalStartHour);
+  totalLength += prependNonNegativeIntegerBlock(encoder, tlv::IntervalStartHour, m_intervalStartHour);
   // EndDate
   totalLength += prependStringBlock(encoder, tlv::EndDate, to_iso_string(m_endDate));
   // StartDate

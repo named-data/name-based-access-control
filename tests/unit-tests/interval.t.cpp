@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "interval.hpp"
@@ -33,8 +33,7 @@ BOOST_AUTO_TEST_SUITE(TestInterval)
 BOOST_AUTO_TEST_CASE(Construction)
 {
   // construct with the right parameters
-  Interval interval1(from_iso_string("20150825T120000"),
-                     from_iso_string("20150825T160000"));
+  Interval interval1(from_iso_string("20150825T120000"), from_iso_string("20150825T160000"));
   BOOST_CHECK_EQUAL(to_iso_string(interval1.getStartTime()), "20150825T120000");
   BOOST_CHECK_EQUAL(to_iso_string(interval1.getEndTime()), "20150825T160000");
   BOOST_CHECK_EQUAL(interval1.isValid(), true);
@@ -51,8 +50,7 @@ BOOST_AUTO_TEST_CASE(Construction)
 
 BOOST_AUTO_TEST_CASE(CoverTimePoint)
 {
-  Interval interval(from_iso_string("20150825T120000"),
-                    from_iso_string("20150825T160000"));
+  Interval interval(from_iso_string("20150825T120000"), from_iso_string("20150825T160000"));
 
   TimeStamp tp1 = from_iso_string("20150825T120000");
   TimeStamp tp2 = from_iso_string("20150825T130000");
@@ -67,23 +65,17 @@ BOOST_AUTO_TEST_CASE(CoverTimePoint)
 
 BOOST_AUTO_TEST_CASE(IntersectionAndUnion)
 {
-  Interval interval1(from_iso_string("20150825T030000"),
-                     from_iso_string("20150825T050000"));
+  Interval interval1(from_iso_string("20150825T030000"), from_iso_string("20150825T050000"));
   // no intersection
-  Interval interval2(from_iso_string("20150825T050000"),
-                     from_iso_string("20150825T070000"));
+  Interval interval2(from_iso_string("20150825T050000"), from_iso_string("20150825T070000"));
   // no intersection
-  Interval interval3(from_iso_string("20150825T060000"),
-                     from_iso_string("20150825T070000"));
+  Interval interval3(from_iso_string("20150825T060000"), from_iso_string("20150825T070000"));
   // there's an intersection
-  Interval interval4(from_iso_string("20150825T010000"),
-                     from_iso_string("20150825T040000"));
+  Interval interval4(from_iso_string("20150825T010000"), from_iso_string("20150825T040000"));
   // right in the interval1, there's an intersection
-  Interval interval5(from_iso_string("20150825T030000"),
-                     from_iso_string("20150825T040000"));
+  Interval interval5(from_iso_string("20150825T030000"), from_iso_string("20150825T040000"));
   // wrap the interval1, there's an intersection
-  Interval interval6(from_iso_string("20150825T010000"),
-                     from_iso_string("20150825T050000"));
+  Interval interval6(from_iso_string("20150825T010000"), from_iso_string("20150825T050000"));
   // empty interval
   Interval interval7(true);
 

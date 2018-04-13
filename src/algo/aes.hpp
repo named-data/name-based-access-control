@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of gep (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of gep authors and contributors.
@@ -20,11 +20,11 @@
 #ifndef NDN_GEP_ALGO_AES_HPP
 #define NDN_GEP_ALGO_AES_HPP
 
-#include <ndn-cxx/security/key-params.hpp>
-#include "../random-number-generator.hpp"
+#include "common.hpp"
 #include "encrypt-params.hpp"
 #include "../decrypt-key.hpp"
-
+#include <ndn-cxx/security/transform/block-cipher.hpp>
+#include <ndn-cxx/security/key-params.hpp>
 
 namespace ndn {
 namespace gep {
@@ -34,7 +34,7 @@ class Aes
 {
 public:
   static DecryptKey<Aes>
-  generateKey(RandomNumberGenerator& rng, AesKeyParams& params);
+  generateKey(AesKeyParams& params);
 
   static EncryptKey<Aes>
   deriveEncryptKey(const Buffer& keyBits);
@@ -57,4 +57,4 @@ typedef EncryptKey<Aes> AesDecryptKey;
 } // namespace gep
 } // namespace ndn
 
-#endif // NDN_GEP_ALGO_AES_ECB_HPP
+#endif // NDN_GEP_ALGO_AES_HPP

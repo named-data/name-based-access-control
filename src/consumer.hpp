@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,25 +16,25 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  * @author Yingdi Yu <yingdi@cs.ucla.edu>
  */
 
 #ifndef NDN_GEP_CONSUMER_HPP
 #define NDN_GEP_CONSUMER_HPP
 
-#include "algo/rsa.hpp"
-#include "algo/aes.hpp"
+#include "common.hpp"
 #include "consumer-db.hpp"
 #include "error-code.hpp"
-
-#include <ndn-cxx/security/validator-null.hpp>
+#include "algo/aes.hpp"
+#include "algo/rsa.hpp"
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 
 namespace ndn {
 namespace gep {
 
-typedef function<void (const Data&, const Buffer&)> ConsumptionCallBack;
+typedef function<void(const Data&, const Buffer&)> ConsumptionCallBack;
 
 /**
  * @brief Consumer in group-based encryption protocol
@@ -42,7 +42,7 @@ typedef function<void (const Data&, const Buffer&)> ConsumptionCallBack;
 class Consumer
 {
 private:
-  typedef function<void (const Buffer&)> PlainTextCallBack;
+  typedef function<void(const Buffer&)> PlainTextCallBack;
 
 public:
   /**
@@ -55,8 +55,12 @@ public:
    * @param cKeyLink The link object for C-KEY retrieval
    * @param dKeyLink The link object for D-KEY retrieval
    */
-  Consumer(Face& face, const Name& groupName, const Name& consumerName, const std::string& dbPath,
-           const Link& cKeyLink = NO_LINK, const Link& dKeyLink = NO_LINK);
+  Consumer(Face& face,
+           const Name& groupName,
+           const Name& consumerName,
+           const std::string& dbPath,
+           const Link& cKeyLink = NO_LINK,
+           const Link& dKeyLink = NO_LINK);
 
   /**
    * @brief Send out the Interest packet to fetch content packet with @p dataName.
@@ -85,7 +89,6 @@ public:
   addDecryptionKey(const Name& keyName, const Buffer& keyBuf);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-
   /**
    * @brief Decrypt @p encryptedBlock using @p keyBits
    *
@@ -149,9 +152,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * @param errorCallback The callback when error happens
    */
   void
-  sendInterest(const Interest& interest, int nRetrials,
+  sendInterest(const Interest& interest,
+               int nRetrials,
                const Link& link,
-               const OnDataValidated& validationCallback,
+               const DataValidationSuccessCallback& validationCallback,
                const ErrorCallBack& errorCallback);
 
   /**
@@ -167,9 +171,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * @param errorCallback The callback when error happens
    */
   void
-  handleNack(const Interest& interest, const lp::Nack& nack,
+  handleNack(const Interest& interest,
+             const lp::Nack& nack,
              const Link& link,
-             const OnDataValidated& validationCallback,
+             const DataValidationSuccessCallback& validationCallback,
              const ErrorCallBack& errorCallback);
 
   /**
@@ -185,9 +190,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * @param errorCallback The callback when error happens
    */
   void
-  handleTimeout(const Interest& interest, int nRetrials,
+  handleTimeout(const Interest& interest,
+                int nRetrials,
                 const Link& link,
-                const OnDataValidated& validationCallback,
+                const DataValidationSuccessCallback& validationCallback,
                 const ErrorCallBack& errorCallback);
 
 public:

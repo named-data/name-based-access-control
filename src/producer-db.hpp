@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -38,16 +38,14 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
+    explicit Error(const std::string& what)
       : std::runtime_error(what)
     {
     }
   };
 
 public:
-  explicit
-  ProducerDB(const std::string& dbPath);
+  explicit ProducerDB(const std::string& dbPath);
 
   ~ProducerDB();
 

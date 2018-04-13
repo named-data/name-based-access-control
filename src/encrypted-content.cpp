@@ -1,7 +1,28 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (c) 2014-2018,  Regents of the University of California
+ *
+ * This file is part of gep (Group-based Encryption Protocol for NDN).
+ * See AUTHORS.md for complete list of gep authors and contributors.
+ *
+ * gep is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * gep is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * gep, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @author Yingdi Yu <yingdi@cs.ucla.edu>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
+ */
+
 #include "encrypted-content.hpp"
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/util/concepts.hpp>
-
 #include <boost/lexical_cast.hpp>
 
 namespace ndn {
@@ -19,9 +40,12 @@ EncryptedContent::EncryptedContent()
 {
 }
 
-EncryptedContent::EncryptedContent(tlv::AlgorithmTypeValue type, const KeyLocator& keyLocator,
-                                   const uint8_t* payload, size_t payloadLen,
-                                   const uint8_t* iv, size_t ivLen)
+EncryptedContent::EncryptedContent(tlv::AlgorithmTypeValue type,
+                                   const KeyLocator& keyLocator,
+                                   const uint8_t* payload,
+                                   size_t payloadLen,
+                                   const uint8_t* iv,
+                                   size_t ivLen)
   : m_type(type)
   , m_hasKeyLocator(true)
   , m_keyLocator(keyLocator)
@@ -57,7 +81,7 @@ EncryptedContent::getKeyLocator() const
   if (m_hasKeyLocator)
     return m_keyLocator;
   else
-    throw Error("KeyLocator does not exist");
+    BOOST_THROW_EXCEPTION(Error("KeyLocator does not exist"));
 }
 
 void
@@ -93,23 +117,24 @@ EncryptedContent::wireEncode(EncodingImpl<TAG>& block) const
   size_t totalLength = 0;
 
   if (m_payload.size() != 0)
-    totalLength += block.prependByteArrayBlock(tlv::EncryptedPayload, m_payload.buf(), m_payload.size());
+    totalLength +=
+      block.prependByteArrayBlock(tlv::EncryptedPayload, m_payload.data(), m_payload.size());
   else
-    throw Error("EncryptedContent does not have a payload");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent does not have a payload"));
 
   if (m_iv.size() != 0) {
-    totalLength += block.prependByteArrayBlock(tlv::InitialVector, m_iv.buf(), m_iv.size());
+    totalLength += block.prependByteArrayBlock(tlv::InitialVector, m_iv.data(), m_iv.size());
   }
 
   if (m_type != -1)
     totalLength += prependNonNegativeIntegerBlock(block, tlv::EncryptionAlgorithm, m_type);
   else
-    throw Error("EncryptedContent does not have an encryption algorithm");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent does not have an encryption algorithm"));
 
   if (m_hasKeyLocator)
     totalLength += m_keyLocator.wireEncode(block);
   else
-    throw Error("EncryptedContent does not have a key locator");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent does not have a key locator"));
 
   totalLength += block.prependVarNumber(totalLength);
   totalLength += block.prependVarNumber(tlv::EncryptedContent);
@@ -136,7 +161,7 @@ void
 EncryptedContent::wireDecode(const Block& wire)
 {
   if (!wire.hasWire()) {
-    throw Error("The supplied block does not contain wire format");
+    BOOST_THROW_EXCEPTION(Error("The supplied block does not contain wire format"));
   }
 
   m_hasKeyLocator = false;
@@ -145,7 +170,7 @@ EncryptedContent::wireDecode(const Block& wire)
   m_wire.parse();
 
   if (m_wire.type() != tlv::EncryptedContent)
-    throw Error("Unexpected TLV type when decoding Name");
+    BOOST_THROW_EXCEPTION(Error("Unexpected TLV type when decoding Name"));
 
   Block::element_const_iterator it = m_wire.elements_begin();
 
@@ -155,14 +180,14 @@ EncryptedContent::wireDecode(const Block& wire)
     it++;
   }
   else
-    throw Error("EncryptedContent does not have key locator");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent does not have key locator"));
 
   if (it != m_wire.elements_end() && it->type() == tlv::EncryptionAlgorithm) {
     m_type = readNonNegativeInteger(*it);
     it++;
   }
   else
-    throw Error("EncryptedContent does not have encryption algorithm");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent does not have encryption algorithm"));
 
   if (it != m_wire.elements_end() && it->type() == tlv::InitialVector) {
     m_iv = Buffer(it->value_begin(), it->value_end());
@@ -176,10 +201,10 @@ EncryptedContent::wireDecode(const Block& wire)
     it++;
   }
   else
-    throw Error("EncryptedContent has missing payload");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent has missing payload"));
 
   if (it != m_wire.elements_end()) {
-    throw Error("EncryptedContent has extraneous sub-TLVs");
+    BOOST_THROW_EXCEPTION(Error("EncryptedContent has extraneous sub-TLVs"));
   }
 }
 

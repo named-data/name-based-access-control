@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -20,8 +20,8 @@
  */
 
 #include "producer-db.hpp"
-#include "algo/aes.hpp"
 #include "boost-test.hpp"
+#include "algo/aes.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -59,10 +59,9 @@ BOOST_AUTO_TEST_CASE(DatabaseFunctions)
   ProducerDB db(dbDir);
 
   // create member
-  RandomNumberGenerator rng;
   AesKeyParams params(128);
-  Buffer keyBuf1 = algo::Aes::generateKey(rng, params).getKeyBits();
-  Buffer keyBuf2 = algo::Aes::generateKey(rng, params).getKeyBits();
+  Buffer keyBuf1 = algo::Aes::generateKey(params).getKeyBits();
+  Buffer keyBuf2 = algo::Aes::generateKey(params).getKeyBits();
 
   system_clock::TimePoint point1(time::fromIsoString("20150101T100000"));
   system_clock::TimePoint point2(time::fromIsoString("20150102T100000"));
@@ -85,16 +84,10 @@ BOOST_AUTO_TEST_CASE(DatabaseFunctions)
 
   // get content key
   Buffer keyResult = db.getContentKey(point1);
-  BOOST_CHECK_EQUAL_COLLECTIONS(keyResult.begin(),
-                                keyResult.end(),
-                                keyBuf1.begin(),
-                                keyBuf1.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(keyResult.begin(), keyResult.end(), keyBuf1.begin(), keyBuf1.end());
 
   keyResult = db.getContentKey(point3);
-  BOOST_CHECK_EQUAL_COLLECTIONS(keyResult.begin(),
-                                keyResult.end(),
-                                keyBuf2.begin(),
-                                keyBuf2.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(keyResult.begin(), keyResult.end(), keyBuf2.begin(), keyBuf2.end());
 
   // throw exception when there is no such timeslot in database
   BOOST_CHECK_THROW(db.getContentKey(point4), ProducerDB::Error);

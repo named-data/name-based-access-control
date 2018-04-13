@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of gep (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of gep authors and contributors.
@@ -17,8 +17,9 @@
  * gep, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../random-number-generator.hpp"
 #include "encrypt-params.hpp"
+#include "error.hpp"
+#include <openssl/rand.h>
 
 namespace ndn {
 namespace gep {
@@ -27,10 +28,12 @@ namespace algo {
 EncryptParams::EncryptParams(tlv::AlgorithmTypeValue algorithm, uint8_t ivLength)
   : m_algo(algorithm)
 {
-  if (ivLength != 0){
-    RandomNumberGenerator rng;
+  if (ivLength != 0) {
     m_iv.resize(ivLength);
-    rng.GenerateBlock(m_iv.buf(), m_iv.size());
+    int result = RAND_bytes(m_iv.data(), m_iv.size());
+    if (result != 1) {
+      BOOST_THROW_EXCEPTION(Error("Cannot generate random IV"));
+    }
   }
 }
 

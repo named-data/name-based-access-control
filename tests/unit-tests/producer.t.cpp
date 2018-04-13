@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -18,16 +18,13 @@
  */
 
 #include "producer.hpp"
-#include "algo/encryptor.hpp"
-#include "algo/rsa.hpp"
-#include "algo/aes.hpp"
 #include "encrypted-content.hpp"
 #include "unit-test-time-fixture.hpp"
-#include "random-number-generator.hpp"
-
-#include <ndn-cxx/util/dummy-client-face.hpp>
-
+#include "algo/aes.hpp"
+#include "algo/encryptor.hpp"
+#include "algo/rsa.hpp"
 #include "boost-test.hpp"
+#include <ndn-cxx/util/dummy-client-face.hpp>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 
@@ -35,12 +32,10 @@ namespace ndn {
 namespace gep {
 namespace tests {
 
-static const uint8_t DATA_CONTEN[] = {
-  0xcb, 0xe5, 0x6a, 0x80, 0x41, 0x24, 0x58, 0x23,
-  0x84, 0x14, 0x15, 0x61, 0x80, 0xb9, 0x5e, 0xbd,
-  0xce, 0x32, 0xb4, 0xbe, 0xbc, 0x91, 0x31, 0xd6,
-  0x19, 0x00, 0x80, 0x8b, 0xfa, 0x00, 0x05, 0x9c
-};
+static const uint8_t DATA_CONTEN[] = {0xcb, 0xe5, 0x6a, 0x80, 0x41, 0x24, 0x58, 0x23,
+                                      0x84, 0x14, 0x15, 0x61, 0x80, 0xb9, 0x5e, 0xbd,
+                                      0xce, 0x32, 0xb4, 0xbe, 0xbc, 0x91, 0x31, 0xd6,
+                                      0x19, 0x00, 0x80, 0x8b, 0xfa, 0x00, 0x05, 0x9c};
 
 class ProducerFixture : public UnitTestTimeFixture
 {
@@ -65,16 +60,15 @@ public:
   void
   createEncryptionKey(Name eKeyName, const Name& timeMarker)
   {
-    RandomNumberGenerator rng;
     RsaKeyParams params;
     eKeyName.append(timeMarker);
 
-    Buffer dKeyBuf = algo::Rsa::generateKey(rng, params).getKeyBits();
+    Buffer dKeyBuf = algo::Rsa::generateKey(params).getKeyBits();
     Buffer eKeyBuf = algo::Rsa::deriveEncryptKey(dKeyBuf).getKeyBits();
     decryptionKeys[eKeyName] = dKeyBuf;
 
     shared_ptr<Data> keyData = make_shared<Data>(eKeyName);
-    keyData->setContent(eKeyBuf.buf(), eKeyBuf.size());
+    keyData->setContent(eKeyBuf.data(), eKeyBuf.size());
     keyChain.sign(*keyData);
     encryptionKeys[eKeyName] = keyData;
   }
@@ -156,16 +150,17 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   }
 
   face2.setInterestFilter(prefix,
-        [&] (const InterestFilter&, const Interest& i) {
-           Name interestName = i.getName();
-           interestName.append(timeMarker);
-           BOOST_REQUIRE_EQUAL(encryptionKeys.find(interestName) !=
-                               encryptionKeys.end(), true);
-           face2.put(*(encryptionKeys[interestName]));
-           return;
-        },
-        RegisterPrefixSuccessCallback(),
-        [] (const Name&, const std::string& e) { });
+                          [&] (const InterestFilter&, const Interest& i) {
+                            Name interestName = i.getName();
+                            interestName.append(timeMarker);
+                            BOOST_REQUIRE_EQUAL(encryptionKeys.find(interestName) !=
+                                                  encryptionKeys.end(),
+                                                true);
+                            face2.put(*(encryptionKeys[interestName]));
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) {});
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -177,50 +172,46 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   ProducerDB testDb(dbDir);
   Buffer contentKey;
 
-  auto checkEncryptionKeys =
-          [&](const std::vector<Data>& result,
-              const time::system_clock::TimePoint& testTime,
-              const name::Component& roundedTime) {
-            BOOST_CHECK_EQUAL(testDb.hasContentKey(testTime), true);
-            contentKey = testDb.getContentKey(testTime);
+  auto checkEncryptionKeys = [&] (const std::vector<Data>& result,
+                                 const time::system_clock::TimePoint& testTime,
+                                 const name::Component& roundedTime) {
+    BOOST_CHECK_EQUAL(testDb.hasContentKey(testTime), true);
+    contentKey = testDb.getContentKey(testTime);
 
-            algo::EncryptParams params(tlv::AlgorithmRsaOaep);
-            std::vector<Data>::const_iterator it;
-            for (it = result.begin(); it != result.end(); ++it) {
-              Name keyName = it->getName();
-              BOOST_CHECK_EQUAL(keyName.getSubName(0,6), cKeyName);
-              BOOST_CHECK_EQUAL(keyName.get(6), roundedTime);
-              BOOST_CHECK_EQUAL(keyName.get(7), NAME_COMPONENT_FOR);
-              BOOST_CHECK_EQUAL(decryptionKeys.find(keyName.getSubName(8)) !=
-                                decryptionKeys.end(), true);
-              Name testName = it->getName().getSubName(-8);
-              Buffer decryptionKey;
+    std::vector<Data>::const_iterator it;
+    for (it = result.begin(); it != result.end(); ++it) {
+      Name keyName = it->getName();
+      BOOST_CHECK_EQUAL(keyName.getSubName(0, 6), cKeyName);
+      BOOST_CHECK_EQUAL(keyName.get(6), roundedTime);
+      BOOST_CHECK_EQUAL(keyName.get(7), NAME_COMPONENT_FOR);
+      BOOST_CHECK_EQUAL(decryptionKeys.find(keyName.getSubName(8)) != decryptionKeys.end(), true);
+      Name testName = it->getName().getSubName(-8);
+      Buffer decryptionKey;
 
-              decryptionKey = decryptionKeys.at(keyName.getSubName(8));
-              BOOST_CHECK_EQUAL(decryptionKey.size() != 0, true);
-              Block encryptedKeyBlock = it->getContent();
-              encryptedKeyBlock.parse();
+      decryptionKey = decryptionKeys.at(keyName.getSubName(8));
+      BOOST_CHECK_EQUAL(decryptionKey.size() != 0, true);
+      Block encryptedKeyBlock = it->getContent();
+      encryptedKeyBlock.parse();
 
-              EncryptedContent content(*(encryptedKeyBlock.elements_begin()));
-              const Buffer& encryptedKey = content.getPayload();
-              Buffer retrievedKey = algo::Rsa::decrypt(decryptionKey.buf(),
-                                                       decryptionKey.size(),
-                                                       encryptedKey.buf(),
-                                                       encryptedKey.size(),
-                                                       params);
+      EncryptedContent content(*(encryptedKeyBlock.elements_begin()));
+      const Buffer& encryptedKey = content.getPayload();
+      Buffer retrievedKey = algo::Rsa::decrypt(decryptionKey.data(),
+                                               decryptionKey.size(),
+                                               encryptedKey.data(),
+                                               encryptedKey.size());
 
-              BOOST_CHECK_EQUAL_COLLECTIONS(contentKey.begin(),
-                                            contentKey.end(),
-                                            retrievedKey.begin(),
-                                            retrievedKey.end());
-            }
-            BOOST_CHECK_EQUAL(result.size(), 3);
-          };
+      BOOST_CHECK_EQUAL_COLLECTIONS(contentKey.begin(),
+                                    contentKey.end(),
+                                    retrievedKey.begin(),
+                                    retrievedKey.end());
+    }
+    BOOST_CHECK_EQUAL(result.size(), 3);
+  };
 
   // Initial test to confirm that keys are created for this timeslot
   Name contentKeyName1 =
-      producer.createContentKey(testTime1,
-      std::bind(checkEncryptionKeys, _1, testTime1, testTimeRounded1));
+    producer.createContentKey(testTime1,
+                              std::bind(checkEncryptionKeys, _1, testTime1, testTimeRounded1));
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -228,8 +219,8 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
 
   // Verify that we do not repeat the search for e-keys, don't advance clock
   Name contentKeyName2 =
-      producer.createContentKey(testTime2,
-      std::bind(checkEncryptionKeys, _1, testTime2, testTimeRounded2));
+    producer.createContentKey(testTime2,
+                              std::bind(checkEncryptionKeys, _1, testTime2, testTimeRounded2));
 
   // Confirm content key names are correct
   BOOST_CHECK_EQUAL(contentKeyName1.getPrefix(-1), cKeyName);
@@ -242,10 +233,10 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   producer.produce(testData, testTime2, DATA_CONTEN, sizeof(DATA_CONTEN));
 
   Name producedName = testData.getName();
-  BOOST_CHECK_EQUAL(producedName.getSubName(0,5), cKeyName.getPrefix(-1));
+  BOOST_CHECK_EQUAL(producedName.getSubName(0, 5), cKeyName.getPrefix(-1));
   BOOST_CHECK_EQUAL(producedName.get(5), testTimeComponent2);
   BOOST_CHECK_EQUAL(producedName.get(6), NAME_COMPONENT_FOR);
-  BOOST_CHECK_EQUAL(producedName.getSubName(7,6), cKeyName);
+  BOOST_CHECK_EQUAL(producedName.getSubName(7, 6), cKeyName);
   BOOST_CHECK_EQUAL(producedName.get(13), testTimeRounded2);
 
   Block dataBlock = testData.getContent();
@@ -256,9 +247,9 @@ BOOST_AUTO_TEST_CASE(ContentKeyRequest)
   const Buffer& iv = dataContent.getInitialVector();
 
   algo::EncryptParams params(tlv::AlgorithmAesCbc, 16);
-  params.setIV(iv.buf(), iv.size());
-  Buffer decryptTest = algo::Aes::decrypt(contentKey.buf(), contentKey.size(),
-                                          encData.buf(), encData.size(), params);
+  params.setIV(iv.data(), iv.size());
+  Buffer decryptTest =
+    algo::Aes::decrypt(contentKey.data(), contentKey.size(), encData.data(), encData.size(), params);
   BOOST_CHECK_EQUAL_COLLECTIONS(decryptTest.begin(),
                                 decryptTest.end(),
                                 DATA_CONTEN,
@@ -295,31 +286,31 @@ BOOST_AUTO_TEST_CASE(ContentKeySearch)
 
   size_t requestCount = 0;
   face2.setInterestFilter(prefix,
-        [&] (const InterestFilter&, const Interest& i) {
-           BOOST_REQUIRE_EQUAL(i.getName(), expectedInterest);
-           Name interestName = i.getName();
-           switch(requestCount) {
-             case 0:
-               interestName.append(timeMarkerFirstHop);
-               break;
+                          [&] (const InterestFilter&, const Interest& i) {
+                            BOOST_REQUIRE_EQUAL(i.getName(), expectedInterest);
+                            Name interestName = i.getName();
+                            switch (requestCount) {
+                              case 0:
+                                interestName.append(timeMarkerFirstHop);
+                                break;
 
-             case 1:
-               interestName.append(timeMarkerSecondHop);
-               break;
+                              case 1:
+                                interestName.append(timeMarkerSecondHop);
+                                break;
 
-             case 2:
-               interestName.append(timeMarkerThirdHop);
-               break;
+                              case 2:
+                                interestName.append(timeMarkerThirdHop);
+                                break;
 
-             default:
-               break;
-           }
-           face2.put(*(encryptionKeys[interestName]));
-           requestCount++;
-           return;
-        },
-        RegisterPrefixSuccessCallback(),
-        [] (const Name&, const std::string& e) { });
+                              default:
+                                break;
+                            }
+                            face2.put(*(encryptionKeys[interestName]));
+                            requestCount++;
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) {});
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -328,19 +319,17 @@ BOOST_AUTO_TEST_CASE(ContentKeySearch)
   // Verify that if a key is found, but not within the right timeslot, the search
   // is refined until a valid timeslot is found.
   Producer producer(prefix, suffix, face1, dbDir);
-  producer.createContentKey(testTime,
-          [&](const std::vector<Data>& result){
-            BOOST_CHECK_EQUAL(requestCount, 3);
-            BOOST_CHECK_EQUAL(result.size(), 1);
+  producer.createContentKey(testTime, [&] (const std::vector<Data>& result) {
+    BOOST_CHECK_EQUAL(requestCount, 3);
+    BOOST_CHECK_EQUAL(result.size(), 1);
 
-            Data keyData = result[0];
-            Name keyName = keyData.getName();
-            BOOST_CHECK_EQUAL(keyName.getSubName(0,4), cKeyName);
-            BOOST_CHECK_EQUAL(keyName.get(4), timeMarkerThirdHop[0]);
-            BOOST_CHECK_EQUAL(keyName.get(5), NAME_COMPONENT_FOR);
-            BOOST_CHECK_EQUAL(keyName.getSubName(6),
-                              expectedInterest.append(timeMarkerThirdHop));
-          });
+    Data keyData = result[0];
+    Name keyName = keyData.getName();
+    BOOST_CHECK_EQUAL(keyName.getSubName(0, 4), cKeyName);
+    BOOST_CHECK_EQUAL(keyName.get(4), timeMarkerThirdHop[0]);
+    BOOST_CHECK_EQUAL(keyName.get(5), NAME_COMPONENT_FOR);
+    BOOST_CHECK_EQUAL(keyName.getSubName(6), expectedInterest.append(timeMarkerThirdHop));
+  });
   do {
     advanceClocks(time::milliseconds(10), 20);
   } while (passPacket());
@@ -362,13 +351,13 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
 
   size_t timeoutCount = 0;
   face2.setInterestFilter(prefix,
-        [&] (const InterestFilter&, const Interest& i) {
-           BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
-           timeoutCount++;
-           return;
-        },
-        RegisterPrefixSuccessCallback(),
-        [] (const Name&, const std::string& e) { });
+                          [&] (const InterestFilter&, const Interest& i) {
+                            BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
+                            timeoutCount++;
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) {});
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -377,11 +366,10 @@ BOOST_AUTO_TEST_CASE(ContentKeyTimeout)
   // Verify that if no response is received, the producer appropriately times out.
   // The result vector should not contain elements that have timed out.
   Producer producer(prefix, suffix, face1, dbDir);
-  producer.createContentKey(testTime,
-          [&](const std::vector<Data>& result){
-            BOOST_CHECK_EQUAL(timeoutCount, 4);
-            BOOST_CHECK_EQUAL(result.size(), 0);
-          });
+  producer.createContentKey(testTime, [&] (const std::vector<Data>& result) {
+    BOOST_CHECK_EQUAL(timeoutCount, 4);
+    BOOST_CHECK_EQUAL(result.size(), 0);
+  });
 
   do {
     advanceClocks(time::milliseconds(10), 500);
@@ -404,14 +392,14 @@ BOOST_AUTO_TEST_CASE(ProducerWithLink)
 
   size_t timeoutCount = 0;
   face2.setInterestFilter(prefix,
-        [&] (const InterestFilter&, const Interest& i) {
-           BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
-           BOOST_CHECK(i.getLink().getDelegations().size() == 3);
-           timeoutCount++;
-           return;
-        },
-        RegisterPrefixSuccessCallback(),
-        [] (const Name&, const std::string& e) { });
+                          [&] (const InterestFilter&, const Interest& i) {
+                            BOOST_CHECK_EQUAL(i.getName(), expectedInterest);
+                            BOOST_CHECK(i.getForwardingHint().size() == 3);
+                            timeoutCount++;
+                            return;
+                          },
+                          RegisterPrefixSuccessCallback(),
+                          [] (const Name&, const std::string& e) {});
 
   do {
     advanceClocks(time::milliseconds(10), 20);
@@ -422,11 +410,10 @@ BOOST_AUTO_TEST_CASE(ProducerWithLink)
   Link link("test", {{10, "/test1"}, {20, "/test2"}, {100, "/test3"}});
   keyChain.sign(link);
   Producer producer(prefix, suffix, face1, dbDir, 3, link);
-  producer.createContentKey(testTime,
-          [&](const std::vector<Data>& result){
-            BOOST_CHECK_EQUAL(timeoutCount, 4);
-            BOOST_CHECK_EQUAL(result.size(), 0);
-          });
+  producer.createContentKey(testTime, [&] (const std::vector<Data>& result) {
+    BOOST_CHECK_EQUAL(timeoutCount, 4);
+    BOOST_CHECK_EQUAL(result.size(), 0);
+  });
 
   do {
     advanceClocks(time::milliseconds(10), 800);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,13 +16,12 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "group-manager-db.hpp"
-#include "algo/rsa.hpp"
 #include "boost-test.hpp"
-
+#include "algo/rsa.hpp"
 #include <boost/filesystem.hpp>
 
 namespace ndn {
@@ -136,9 +135,8 @@ BOOST_AUTO_TEST_CASE(DatabaseFunctions)
   Schedule schedule(scheduleBlock);
 
   // create member
-  RandomNumberGenerator rng;
   RsaKeyParams params;
-  DecryptKey<algo::Rsa> decryptKey = algo::Rsa::generateKey(rng, params);
+  DecryptKey<algo::Rsa> decryptKey = algo::Rsa::generateKey(params);
   EncryptKey<algo::Rsa> encryptKey = algo::Rsa::deriveEncryptKey(decryptKey.getKeyBits());
   Buffer keyBuf = encryptKey.getKeyBits();
 

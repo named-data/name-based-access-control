@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of gep (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of gep authors and contributors.

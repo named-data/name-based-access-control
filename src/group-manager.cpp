@@ -1,35 +1,45 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
- * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
- * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
+ * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for
+ * NDN). See AUTHORS.md for complete list of ndn-group-encrypt authors and
+ * contributors.
  *
- * ndn-group-encrypt is free software: you can redistribute it and/or modify it under the terms
- * of the GNU General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
+ * ndn-group-encrypt is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- * ndn-group-encrypt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more details.
+ * ndn-group-encrypt is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see
+ * <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "group-manager.hpp"
-#include "algo/encryptor.hpp"
 #include "encrypted-content.hpp"
+#include "algo/encryptor.hpp"
 
+#include <iostream>
 #include <map>
+
+#include <ndn-cxx/util/string-helper.hpp>
 
 namespace ndn {
 namespace gep {
 
-GroupManager::GroupManager(const Name& prefix, const Name& dataType, const std::string& dbPath,
-                           const int paramLength, const int freshPeriod)
+GroupManager::GroupManager(const Name& prefix,
+                           const Name& dataType,
+                           const std::string& dbPath,
+                           const int paramLength,
+                           const int freshPeriod)
   : m_namespace(prefix)
   , m_db(dbPath)
   , m_paramLength(paramLength)
@@ -46,8 +56,9 @@ GroupManager::getGroupKey(const TimeStamp& timeslot, bool needRegenerate)
 
   // get time interval
   Interval finalInterval = calculateInterval(timeslot, memberKeys);
-  if (finalInterval.isValid() == false)
+  if (finalInterval.isValid() == false) {
     return result;
+  }
 
   std::string startTs = boost::posix_time::to_iso_string(finalInterval.getStartTime());
   std::string endTs = boost::posix_time::to_iso_string(finalInterval.getEndTime());
@@ -109,8 +120,15 @@ GroupManager::updateSchedule(const std::string& scheduleName, const Schedule& sc
 void
 GroupManager::addMember(const std::string& scheduleName, const Data& memCert)
 {
-  IdentityCertificate cert(memCert);
-  m_db.addMember(scheduleName, cert.getPublicKeyName(), cert.getPublicKeyInfo().get());
+  security::v2::Certificate cert(memCert);
+  Buffer keybits = cert.getPublicKey();
+  m_db.addMember(scheduleName, cert.getKeyName(), keybits);
+}
+
+void
+GroupManager::addMember(const std::string& scheduleName, const Name& keyName, const Buffer& key)
+{
+  m_db.addMember(scheduleName, keyName, key);
 }
 
 void
@@ -138,14 +156,13 @@ GroupManager::calculateInterval(const TimeStamp& timeslot, std::map<Name, Buffer
 
   // get the all intervals from schedules
   for (const std::string& scheduleName : m_db.listAllScheduleNames()) {
-
     const Schedule& schedule = m_db.getSchedule(scheduleName);
     std::tie(isPositive, tempInterval) = schedule.getCoveringInterval(timeslot);
 
     if (isPositive) {
       if (!positiveResult.isValid())
         positiveResult = tempInterval;
-      positiveResult && tempInterval;
+      positiveResult&& tempInterval;
 
       std::map<Name, Buffer> m = m_db.getScheduleMembers(scheduleName);
       memberKeys.insert(m.begin(), m.end());
@@ -153,11 +170,12 @@ GroupManager::calculateInterval(const TimeStamp& timeslot, std::map<Name, Buffer
     else {
       if (!negativeResult.isValid())
         negativeResult = tempInterval;
-      negativeResult && tempInterval;
+      negativeResult&& tempInterval;
     }
   }
   if (!positiveResult.isValid()) {
-    // return invalid interval when there is no member has interval covering the time slot
+    // return invalid interval when there is no member has interval covering the
+    // time slot
     return Interval(false);
   }
 
@@ -173,31 +191,32 @@ GroupManager::calculateInterval(const TimeStamp& timeslot, std::map<Name, Buffer
 void
 GroupManager::generateKeyPairs(Buffer& priKeyBuf, Buffer& pubKeyBuf) const
 {
-  RandomNumberGenerator rng;
   RsaKeyParams params(m_paramLength);
-  DecryptKey<algo::Rsa> privateKey = algo::Rsa::generateKey(rng, params);
+  DecryptKey<algo::Rsa> privateKey = algo::Rsa::generateKey(params);
   priKeyBuf = privateKey.getKeyBits();
   EncryptKey<algo::Rsa> publicKey = algo::Rsa::deriveEncryptKey(priKeyBuf);
   pubKeyBuf = publicKey.getKeyBits();
 }
 
-
 Data
-GroupManager::createEKeyData(const std::string& startTs, const std::string& endTs,
+GroupManager::createEKeyData(const std::string& startTs,
+                             const std::string& endTs,
                              const Buffer& pubKeyBuf)
 {
   Name name(m_namespace);
   name.append(NAME_COMPONENT_E_KEY).append(startTs).append(endTs);
   Data data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
-  data.setContent(pubKeyBuf.get(), pubKeyBuf.size());
+  data.setContent(pubKeyBuf.data(), pubKeyBuf.size());
   m_keyChain.sign(data);
   return data;
 }
 
 Data
-GroupManager::createDKeyData(const std::string& startTs, const std::string& endTs,
-                             const Name& keyName, const Buffer& priKeyBuf,
+GroupManager::createDKeyData(const std::string& startTs,
+                             const std::string& endTs,
+                             const Name& keyName,
+                             const Buffer& priKeyBuf,
                              const Buffer& certKey)
 {
   Name name(m_namespace);
@@ -206,8 +225,13 @@ GroupManager::createDKeyData(const std::string& startTs, const std::string& endT
   Data data = Data(name);
   data.setFreshnessPeriod(time::hours(m_freshPeriod));
   algo::EncryptParams eparams(tlv::AlgorithmRsaOaep);
-  algo::encryptData(data, priKeyBuf.buf(), priKeyBuf.size(), keyName,
-                    certKey.buf(), certKey.size(), eparams);
+  algo::encryptData(data,
+                    priKeyBuf.data(),
+                    priKeyBuf.size(),
+                    keyName,
+                    certKey.data(),
+                    certKey.size(),
+                    eparams);
   m_keyChain.sign(data);
   return data;
 }
@@ -236,5 +260,5 @@ GroupManager::cleanEKeys()
   m_db.cleanEKeys();
 }
 
-} // namespace ndn
+} // namespace gep
 } // namespace ndn

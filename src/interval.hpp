@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,14 +16,13 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #ifndef NDN_GEP_INTERVAL_HPP
 #define NDN_GEP_INTERVAL_HPP
 
 #include "common.hpp"
-
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace ndn {
@@ -38,8 +37,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
+    explicit Error(const std::string& what)
       : std::runtime_error(what)
     {
     }
@@ -51,11 +49,9 @@ public:
    *
    * @param isValid If isValid is true, the created interval is an empty interval
    */
-  explicit
-  Interval(bool isValid = false);
+  explicit Interval(bool isValid = false);
 
-  Interval(const TimeStamp& startTime,
-           const TimeStamp& endTime);
+  Interval(const TimeStamp& startTime, const TimeStamp& endTime);
 
   /**
    * @brief Check if the timestamp tp is in the interval
@@ -73,7 +69,7 @@ public:
    * Two intervals should all be valid but they can be empty
    */
   Interval&
-  operator &&(const Interval& interval);
+  operator&&(const Interval& interval);
 
   /**
    * @brief Get the union set interval of two intervals
@@ -82,7 +78,7 @@ public:
    * Two intervals should all be valid but they can be empty
    */
   Interval&
-  operator ||(const Interval& interval);
+  operator||(const Interval& interval);
 
   const TimeStamp&
   getStartTime() const

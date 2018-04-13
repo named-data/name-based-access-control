@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -20,8 +20,8 @@
 #ifndef NDN_ENCRYPTOR_HPP
 #define NDN_ENCRYPTOR_HPP
 
-#include <ndn-cxx/data.hpp>
 #include "encrypt-params.hpp"
+#include <ndn-cxx/data.hpp>
 
 namespace ndn {
 namespace gep {
@@ -39,8 +39,12 @@ namespace algo {
  * a nonce in the content of @p data.
  */
 void
-encryptData(Data& data, const uint8_t* payload, size_t payloadLen,
-            const Name& keyName, const uint8_t* key, size_t keyLen,
+encryptData(Data& data,
+            const uint8_t* payload,
+            size_t payloadLen,
+            const Name& keyName,
+            const uint8_t* key,
+            size_t keyLen,
             const EncryptParams& params);
 
 } // namespace algo

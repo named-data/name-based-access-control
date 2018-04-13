@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -24,8 +24,8 @@
 #pragma GCC system_header
 #pragma clang system_header
 
-#include <boost/test/unit_test.hpp>
 #include <boost/concept_check.hpp>
 #include <boost/test/output_test_stream.hpp>
+#include <boost/test/unit_test.hpp>
 
 #endif // NDN_GEP_TESTS_BOOST_TEST_HPP

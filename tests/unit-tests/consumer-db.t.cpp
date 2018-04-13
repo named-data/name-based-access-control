@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "consumer-db.hpp"
-#include "algo/rsa.hpp"
-#include "algo/aes.hpp"
 #include "boost-test.hpp"
+#include "algo/aes.hpp"
+#include "algo/rsa.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -47,9 +47,8 @@ public:
   void
   generateRsaKey(Buffer& encryptionKeyBuf, Buffer& decryptionKeyBuf)
   {
-    RandomNumberGenerator rng;
     RsaKeyParams params;
-    DecryptKey<algo::Rsa> dKey = algo::Rsa::generateKey(rng, params);
+    DecryptKey<algo::Rsa> dKey = algo::Rsa::generateKey(params);
     decryptionKeyBuf = dKey.getKeyBits();
     EncryptKey<algo::Rsa> eKey = algo::Rsa::deriveEncryptKey(decryptionKeyBuf);
     encryptionKeyBuf = eKey.getKeyBits();
@@ -58,9 +57,8 @@ public:
   void
   generateAesKey(Buffer& encryptionKeyBuf, Buffer& decryptionKeyBuf)
   {
-    RandomNumberGenerator rng;
     AesKeyParams params;
-    DecryptKey<algo::Aes> memberDecryptKey = algo::Aes::generateKey(rng, params);
+    DecryptKey<algo::Aes> memberDecryptKey = algo::Aes::generateKey(params);
     decryptionKeyBuf = memberDecryptKey.getKeyBits();
     EncryptKey<algo::Aes> memberEncryptKey = algo::Aes::deriveEncryptKey(decryptionKeyBuf);
     encryptionKeyBuf = memberEncryptKey.getKeyBits();
@@ -89,8 +87,7 @@ BOOST_AUTO_TEST_CASE(OperateAesDecryptionKey)
   db.addKey(keyName, dKeyBuf);
   Buffer resultBuf = db.getKey(keyName);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(dKeyBuf.begin(), dKeyBuf.end(),
-                                resultBuf.begin(), resultBuf.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(dKeyBuf.begin(), dKeyBuf.end(), resultBuf.begin(), resultBuf.end());
 
   db.deleteKey(keyName);
   resultBuf = db.getKey(keyName);
@@ -115,8 +112,7 @@ BOOST_AUTO_TEST_CASE(OperateRsaDecryptionKey)
   db.addKey(keyName, dKeyBuf);
   Buffer resultBuf = db.getKey(keyName);
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(dKeyBuf.begin(), dKeyBuf.end(),
-                                resultBuf.begin(), resultBuf.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(dKeyBuf.begin(), dKeyBuf.end(), resultBuf.begin(), resultBuf.end());
 
   db.deleteKey(keyName);
   resultBuf = db.getKey(keyName);

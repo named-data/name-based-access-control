@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -18,13 +18,14 @@
  *
  * @author Prashanth Swaminathan <prashanthsw@gmail.com>
  * @author Yingdi Yu <yuyingdi@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "producer.hpp"
-#include "random-number-generator.hpp"
-#include "algo/encryptor.hpp"
 #include "algo/aes.hpp"
+#include "algo/encryptor.hpp"
 #include "algo/error.hpp"
+#include <iostream>
 
 namespace ndn {
 namespace gep {
@@ -41,13 +42,15 @@ const Link Producer::NO_LINK = Link();
   hour, so that we can store content keys uniformly (by start of the hour).
 */
 static const system_clock::TimePoint
-getRoundedTimeslot(const system_clock::TimePoint& timeslot) {
-  return time::fromUnixTimestamp(
-    (time::toUnixTimestamp(timeslot) / 3600000) * 3600000);
+getRoundedTimeslot(const system_clock::TimePoint& timeslot)
+{
+  return time::fromUnixTimestamp((time::toUnixTimestamp(timeslot) / 3600000) * 3600000);
 }
 
-Producer::Producer(const Name& prefix, const Name& dataType,
-                   Face& face, const std::string& dbPath,
+Producer::Producer(const Name& prefix,
+                   const Name& dataType,
+                   Face& face,
+                   const std::string& dbPath,
                    uint8_t repeatAttempts,
                    const Link& keyRetrievalLink)
   : m_face(face)
@@ -99,9 +102,8 @@ Producer::createContentKey(const system_clock::TimePoint& timeslot,
   }
 
   // We haven't created the content key, create one and add it into the database.
-  RandomNumberGenerator rng;
   AesKeyParams aesParams(128);
-  contentKeyBits = algo::Aes::generateKey(rng, aesParams).getKeyBits();
+  contentKeyBits = algo::Aes::generateKey(aesParams).getKeyBits();
   m_db.addContentKey(timeslot, contentKeyBits);
 
   // Now we need to retrieve the E-KEYs for content key encryption.
@@ -119,7 +121,9 @@ Producer::createContentKey(const system_clock::TimePoint& timeslot,
       // current E-KEY cannot cover the content key, retrieve one.
       keyRequest.repeatAttempts[it->first] = 0;
       sendKeyInterest(Interest(it->first).setExclude(timeRange).setChildSelector(1),
-                      timeslot, callback, errorCallback);
+                      timeslot,
+                      callback,
+                      errorCallback);
     }
     else {
       // current E-KEY can cover the content key, encrypt the content key directly.
@@ -140,8 +144,10 @@ Producer::defaultErrorCallBack(const ErrorCode& code, const std::string& msg)
 }
 
 void
-Producer::produce(Data& data, const system_clock::TimePoint& timeslot,
-                  const uint8_t* content, size_t contentLen,
+Producer::produce(Data& data,
+                  const system_clock::TimePoint& timeslot,
+                  const uint8_t* content,
+                  size_t contentLen,
                   const ErrorCallBack& errorCallBack)
 {
   // Get a content key
@@ -154,7 +160,7 @@ Producer::produce(Data& data, const system_clock::TimePoint& timeslot,
   data.setName(dataName);
   algo::EncryptParams params(tlv::AlgorithmAesCbc, 16);
   algo::encryptData(data, content, contentLen, contentKeyName,
-                    contentKey.buf(), contentKey.size(), params);
+                    contentKey.data(), contentKey.size(), params);
   m_keychain.sign(data);
 }
 
@@ -165,8 +171,8 @@ Producer::sendKeyInterest(const Interest& interest,
                           const ErrorCallBack& errorCallback)
 {
   Interest request(interest);
-  if (m_keyRetrievalLink.getDelegations().size() > 0) {
-    request.setLink(m_keyRetrievalLink.wireEncode());
+  if (m_keyRetrievalLink.getDelegationList().size() > 0) {
+    request.setForwardingHint(m_keyRetrievalLink.getDelegationList());
   }
   m_face.expressInterest(request,
                          std::bind(&Producer::handleCoveringKey, this, _1, _2,
@@ -178,7 +184,8 @@ Producer::sendKeyInterest(const Interest& interest,
 }
 
 void
-Producer::handleCoveringKey(const Interest& interest, const Data& data,
+Producer::handleCoveringKey(const Interest& interest,
+                            const Data& data,
                             const system_clock::TimePoint& timeslot,
                             const ProducerEKeyCallback& callback,
                             const ErrorCallBack& errorCallback)
@@ -200,7 +207,9 @@ Producer::handleCoveringKey(const Interest& interest, const Data& data,
     timeRange.excludeBefore(keyName.get(START_TS_INDEX));
 
     sendKeyInterest(Interest(interestName).setExclude(timeRange).setChildSelector(1),
-                    timeslot, callback, errorCallback);
+                    timeslot,
+                    callback,
+                    errorCallback);
   }
   else {
     // if received E-KEY covers the content key, encrypt the content
@@ -221,6 +230,9 @@ Producer::handleTimeout(const Interest& interest,
                         const ErrorCallBack& errorCallback)
 {
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
+  if (m_keyRequests.find(timeCount) == m_keyRequests.end()) {
+    return;
+  }
   KeyRequest& keyRequest = m_keyRequests.at(timeCount);
 
   Name interestName = interest.getName();
@@ -244,11 +256,15 @@ Producer::handleNack(const Interest& interest,
 {
   // we run out of options...
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
-  updateKeyRequest(m_keyRequests.at(timeCount), timeCount, callback);
+
+  if (m_keyRequests.find(timeCount) != m_keyRequests.end()) {
+    updateKeyRequest(m_keyRequests.at(timeCount), timeCount, callback);
+  }
 }
 
 void
-Producer::updateKeyRequest(KeyRequest& keyRequest, uint64_t timeCount,
+Producer::updateKeyRequest(KeyRequest& keyRequest,
+                           uint64_t timeCount,
                            const ProducerEKeyCallback& callback)
 {
   keyRequest.interestCount--;
@@ -259,12 +275,16 @@ Producer::updateKeyRequest(KeyRequest& keyRequest, uint64_t timeCount,
 }
 
 bool
-Producer::encryptContentKey(const Buffer& encryptionKey, const Name& eKeyName,
+Producer::encryptContentKey(const Buffer& encryptionKey,
+                            const Name& eKeyName,
                             const system_clock::TimePoint& timeslot,
                             const ProducerEKeyCallback& callback,
                             const ErrorCallBack& errorCallBack)
 {
   uint64_t timeCount = toUnixTimestamp(timeslot).count();
+  if (m_keyRequests.find(timeCount) == m_keyRequests.end()) {
+    return false;
+  }
   KeyRequest& keyRequest = m_keyRequests.at(timeCount);
 
   Name keyName = m_namespace;
@@ -272,15 +292,19 @@ Producer::encryptContentKey(const Buffer& encryptionKey, const Name& eKeyName,
   keyName.append(time::toIsoString(getRoundedTimeslot(timeslot)));
 
   Buffer contentKey = m_db.getContentKey(timeslot);
-
   Data cKeyData;
   cKeyData.setName(keyName);
   algo::EncryptParams params(tlv::AlgorithmRsaOaep);
   try {
-    algo::encryptData(cKeyData, contentKey.buf(), contentKey.size(), eKeyName,
-                      encryptionKey.buf(), encryptionKey.size(), params);
+    algo::encryptData(cKeyData,
+                      contentKey.data(),
+                      contentKey.size(),
+                      eKeyName,
+                      encryptionKey.data(),
+                      encryptionKey.size(),
+                      params);
   }
-  catch (algo::Error& e) {
+  catch (const algo::Error& e) {
     errorCallBack(ErrorCode::EncryptionFailure, e.what());
     return false;
   }

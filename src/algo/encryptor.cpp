@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -18,18 +18,15 @@
  */
 
 #include "encryptor.hpp"
-#include "../random-number-generator.hpp"
-#include "../encrypted-content.hpp"
 #include "aes.hpp"
 #include "rsa.hpp"
-
+#include "../encrypted-content.hpp"
 #include "error.hpp"
+#include <openssl/rand.h>
 
 namespace ndn {
 namespace gep {
 namespace algo {
-
-using namespace CryptoPP;
 
 /**
  * @brief Helper method for symmetric encryption
@@ -39,27 +36,28 @@ using namespace CryptoPP;
  * @return An EncryptedContent
  */
 static EncryptedContent
-encryptSymmetric(const uint8_t* payload, size_t payloadLen,
-                 const uint8_t* key, size_t keyLen,
-                 const Name& keyName, const EncryptParams& params)
+encryptSymmetric(const uint8_t* payload,
+                 size_t payloadLen,
+                 const uint8_t* key,
+                 size_t keyLen,
+                 const Name& keyName,
+                 const EncryptParams& params)
 {
   tlv::AlgorithmTypeValue algType = params.getAlgorithmType();
   const Buffer& iv = params.getIV();
   KeyLocator keyLocator(keyName);
 
   switch (algType) {
-    case tlv::AlgorithmAesEcb: {
-      const Buffer& encryptedPayload = Aes::encrypt(key, keyLen, payload, payloadLen, params);
-      return EncryptedContent(algType, keyLocator, encryptedPayload.buf(), encryptedPayload.size(), iv.buf(), iv.size());
-    }
     case tlv::AlgorithmAesCbc: {
-      BOOST_ASSERT(iv.size() == static_cast<size_t>(AES::BLOCKSIZE));
       const Buffer& encryptedPayload = Aes::encrypt(key, keyLen, payload, payloadLen, params);
-      return EncryptedContent(algType, keyLocator, encryptedPayload.buf(), encryptedPayload.size(), iv.buf(), iv.size());
+      return EncryptedContent(algType, keyLocator,
+                              encryptedPayload.data(),
+                              encryptedPayload.size(),
+                              iv.data(), iv.size());
     }
     default: {
       BOOST_ASSERT(false);
-      throw algo::Error("Unsupported encryption method");
+      BOOST_THROW_EXCEPTION(algo::Error("Unsupported encryption method"));
     }
   }
 }
@@ -75,7 +73,8 @@ encryptSymmetric(const uint8_t* payload, size_t payloadLen,
 static EncryptedContent
 encryptAsymmetric(const uint8_t* payload, size_t payloadLen,
                   const uint8_t* key, size_t keyLen,
-                  const Name& keyName, const EncryptParams& params)
+                  const Name& keyName,
+                  const EncryptParams& params)
 {
   tlv::AlgorithmTypeValue algType = params.getAlgorithmType();
   KeyLocator keyLocator(keyName);
@@ -83,12 +82,12 @@ encryptAsymmetric(const uint8_t* payload, size_t payloadLen,
   switch (algType) {
     case tlv::AlgorithmRsaPkcs:
     case tlv::AlgorithmRsaOaep: {
-      Buffer encryptedPayload = Rsa::encrypt(key, keyLen, payload, payloadLen, params);
-      return EncryptedContent(algType, keyLocator, encryptedPayload.buf(), encryptedPayload.size());
+      Buffer encryptedPayload = Rsa::encrypt(key, keyLen, payload, payloadLen);
+      return EncryptedContent(algType, keyLocator, encryptedPayload.data(), encryptedPayload.size());
     }
     default: {
       BOOST_ASSERT(false);
-      throw algo::Error("Unsupported encryption method");
+      BOOST_THROW_EXCEPTION(algo::Error("Unsupported encryption method"));
     }
   }
 }
@@ -101,39 +100,33 @@ encryptData(Data& data, const uint8_t* payload, size_t payloadLen,
   Name dataName = data.getName();
   dataName.append(NAME_COMPONENT_FOR).append(keyName);
   data.setName(dataName);
-  switch(params.getAlgorithmType()) {
+  switch (params.getAlgorithmType()) {
     case tlv::AlgorithmAesCbc:
     case tlv::AlgorithmAesEcb: {
-      const EncryptedContent& content = encryptSymmetric(payload, payloadLen, key, keyLen, keyName, params);
+      const EncryptedContent& content =
+        encryptSymmetric(payload, payloadLen, key, keyLen, keyName, params);
       data.setContent(content.wireEncode());
       break;
     }
     case tlv::AlgorithmRsaPkcs:
     case tlv::AlgorithmRsaOaep: {
-      size_t maxPlaintextLength = 0;
-      RSA::PublicKey publicKey;
-      ByteQueue keyQueue;
-
-      keyQueue.LazyPut(key, keyLen);
-      publicKey.Load(keyQueue);
-      RSAES_PKCS1v15_Encryptor enc(publicKey);
-      maxPlaintextLength = enc.FixedMaxPlaintextLength();
-
-      if (maxPlaintextLength < payloadLen) {
-        RandomNumberGenerator rng;
-        SecByteBlock nonceKey(0x00, 16);  // 128 bits key.
-        rng.GenerateBlock(nonceKey.data(), nonceKey.size());
+      if (payloadLen > keyLen - 11) {
+        uint8_t nonceKey[16];
+        int result = RAND_bytes(nonceKey, sizeof(nonceKey));
+        if (result != 1) {
+          BOOST_THROW_EXCEPTION(Error("Cannot generate 32 bytes random AES key"));
+        }
 
         Name nonceKeyName(keyName);
         nonceKeyName.append("nonce");
 
-        EncryptParams symParams(tlv::AlgorithmAesCbc, AES::BLOCKSIZE);
+        EncryptParams symParams(tlv::AlgorithmAesCbc, 16);
 
         const EncryptedContent& nonceContent =
-          encryptSymmetric(payload, payloadLen, nonceKey.data(), nonceKey.size(), nonceKeyName, symParams);
+          encryptSymmetric(payload, payloadLen, nonceKey, sizeof(nonceKey), nonceKeyName, symParams);
 
         const EncryptedContent& payloadContent =
-          encryptAsymmetric(nonceKey.data(), nonceKey.size(), key, keyLen, keyName, params);
+          encryptAsymmetric(nonceKey, sizeof(nonceKey), key, keyLen, keyName, params);
 
         Block content(tlv::Content);
         content.push_back(payloadContent.wireEncode());
@@ -143,13 +136,14 @@ encryptData(Data& data, const uint8_t* payload, size_t payloadLen,
         return;
       }
       else {
-        const EncryptedContent& content = encryptAsymmetric(payload, payloadLen, key, keyLen, keyName, params);
+        const EncryptedContent& content =
+          encryptAsymmetric(payload, payloadLen, key, keyLen, keyName, params);
         data.setContent(content.wireEncode());
         return;
       }
     }
     default:
-      throw algo::Error("Unsupported encryption method");
+      BOOST_THROW_EXCEPTION(algo::Error("Unsupported encryption method"));
   }
 }
 

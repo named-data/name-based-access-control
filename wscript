@@ -63,7 +63,7 @@ def build(bld):
         # vnum = "0.0.1",
         features=['cxx', 'cxxshlib'],
         source =  bld.path.ant_glob(['src/**/*.cpp']),
-        use = 'BOOST NDN_CXX',
+        use = 'BOOST NDN_CXX CRYPTOPP',
         includes = ['src', '.'],
         export_includes=['src', '.'],
         )
@@ -78,7 +78,7 @@ def build(bld):
         cwd = bld.path.find_dir("src"),
         relative_trick = True,
         )
-        
+
 
     bld.install_files(
         dest = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],

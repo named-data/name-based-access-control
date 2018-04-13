@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of gep (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of gep authors and contributors.
@@ -20,10 +20,9 @@
 #ifndef NDN_GEP_ALGO_RSA_HPP
 #define NDN_GEP_ALGO_RSA_HPP
 
-#include <ndn-cxx/security/key-params.hpp>
-#include "../random-number-generator.hpp"
 #include "encrypt-params.hpp"
 #include "../decrypt-key.hpp"
+#include <ndn-cxx/security/key-params.hpp>
 
 namespace ndn {
 namespace gep {
@@ -33,20 +32,18 @@ class Rsa
 {
 public:
   static DecryptKey<Rsa>
-  generateKey(RandomNumberGenerator& rng, RsaKeyParams& params);
+  generateKey(RsaKeyParams& params);
 
   static EncryptKey<Rsa>
   deriveEncryptKey(const Buffer& keyBits);
 
   static Buffer
   decrypt(const uint8_t* key, size_t keyLen,
-          const uint8_t* payload, size_t payloadLen,
-          const EncryptParams& params);
+          const uint8_t* payload, size_t payloadLen);
 
   static Buffer
   encrypt(const uint8_t* key, size_t keyLen,
-          const uint8_t* payload, size_t payloadLen,
-          const EncryptParams& params);
+          const uint8_t* payload, size_t payloadLen);
 };
 
 typedef DecryptKey<Rsa> RsaPrivateKey;

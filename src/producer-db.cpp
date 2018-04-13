@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -20,11 +20,10 @@
  */
 
 #include "producer-db.hpp"
-
-#include <sqlite3.h>
-#include <boost/filesystem.hpp>
 #include <ndn-cxx/util/sqlite3-statement.hpp>
-#include <ndn-cxx/security/identity-certificate.hpp>
+#include <iostream>
+#include <boost/filesystem.hpp>
+#include <sqlite3.h>
 
 namespace ndn {
 namespace gep {
@@ -32,15 +31,15 @@ namespace gep {
 using util::Sqlite3Statement;
 using time::system_clock;
 
-static const std::string INITIALIZATION =
-  "CREATE TABLE IF NOT EXISTS                         \n"
-  "  contentkeys(                                     \n"
-  "    rowId            INTEGER PRIMARY KEY,          \n"
-  "    timeslot         INTEGER,                      \n"
-  "    key              BLOB NOT NULL                 \n"
-  "  );                                               \n"
-  "CREATE UNIQUE INDEX IF NOT EXISTS                  \n"
-  "   timeslotIndex ON contentkeys(timeslot);         \n";
+static const std::string INITIALIZATION =R"_DBTEXT_(
+CREATE TABLE IF NOT EXISTS
+  contentkeys(
+    rowId            INTEGER PRIMARY KEY,
+    timeslot         INTEGER,
+    key              BLOB NOT NULL
+  );
+CREATE UNIQUE INDEX IF NOT EXISTS
+   timeslotIndex ON contentkeys(timeslot);)_DBTEXT_";
 
 class ProducerDB::Impl
 {
@@ -49,14 +48,10 @@ public:
   {
     // open Database
 
-    int result = sqlite3_open_v2(dbPath.c_str(), &m_database,
+    int result = sqlite3_open_v2(dbPath.c_str(),
+                                 &m_database,
                                  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-#ifdef NDN_CXX_DISABLE_SQLITE3_FS_LOCKING
-                                 "unix-dotfile"
-#else
-                                 nullptr
-#endif
-                                 );
+                                 nullptr);
 
     if (result != SQLITE_OK)
       BOOST_THROW_EXCEPTION(Error("Producer DB cannot be opened/created: " + dbPath));
@@ -90,7 +85,8 @@ ProducerDB::ProducerDB(const std::string& dbPath)
 ProducerDB::~ProducerDB() = default;
 
 static int32_t
-getFixedTimeslot(const system_clock::TimePoint& timeslot) {
+getFixedTimeslot(const system_clock::TimePoint& timeslot)
+{
   return (time::toUnixTimestamp(timeslot)).count() / 3600000;
 }
 
@@ -99,7 +95,7 @@ ProducerDB::hasContentKey(const system_clock::TimePoint& timeslot) const
 {
   int32_t fixedTimeslot = getFixedTimeslot(timeslot);
   Sqlite3Statement statement(m_impl->m_database,
-                             "SELECT key FROM contentkeys where timeslot=?");
+                             R"_DBTEXT_(SELECT key FROM contentkeys where timeslot=?)_DBTEXT_");
   statement.bind(1, fixedTimeslot);
   return (statement.step() == SQLITE_ROW);
 }
@@ -110,7 +106,7 @@ ProducerDB::getContentKey(const system_clock::TimePoint& timeslot) const
 {
   int32_t fixedTimeslot = getFixedTimeslot(timeslot);
   Sqlite3Statement statement(m_impl->m_database,
-                             "SELECT key FROM contentkeys where timeslot=?");
+                             R"_DBTEXT_(SELECT key FROM contentkeys where timeslot=?)_DBTEXT_");
   statement.bind(1, fixedTimeslot);
 
   Buffer result;
@@ -129,12 +125,13 @@ ProducerDB::addContentKey(const system_clock::TimePoint& timeslot, const Buffer&
   // BOOST_ASSERT(key.length() != 0);
   int32_t fixedTimeslot = getFixedTimeslot(timeslot);
   Sqlite3Statement statement(m_impl->m_database,
-                             "INSERT INTO contentkeys (timeslot, key)\
-                              values (?, ?)");
+                             R"_DBTEXT_(INSERT INTO contentkeys (timeslot, key)
+                             values (?, ?))_DBTEXT_");
   statement.bind(1, fixedTimeslot);
-  statement.bind(2, key.buf(), key.size(), SQLITE_TRANSIENT);
-  if (statement.step() != SQLITE_DONE)
+  statement.bind(2, key.data(), key.size(), SQLITE_TRANSIENT);
+  if (statement.step() != SQLITE_DONE) {
     BOOST_THROW_EXCEPTION(Error("Cannot add the key to database"));
+  }
 }
 
 void
@@ -142,7 +139,7 @@ ProducerDB::deleteContentKey(const system_clock::TimePoint& timeslot)
 {
   int32_t fixedTimeslot = getFixedTimeslot(timeslot);
   Sqlite3Statement statement(m_impl->m_database,
-                             "DELETE FROM contentkeys WHERE timeslot=?");
+                             R"_DBTEXT_(DELETE FROM contentkeys WHERE timeslot=?)_DBTEXT_");
   statement.bind(1, fixedTimeslot);
   statement.step();
 }

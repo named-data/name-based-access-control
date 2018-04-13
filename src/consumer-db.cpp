@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,29 +16,29 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #include "consumer-db.hpp"
-
-#include <sqlite3.h>
-#include <boost/filesystem.hpp>
 #include <ndn-cxx/util/sqlite3-statement.hpp>
+#include <boost/filesystem.hpp>
+#include <sqlite3.h>
 
 namespace ndn {
 namespace gep {
 
 using util::Sqlite3Statement;
 
-static const std::string INITIALIZATION =
-  "CREATE TABLE IF NOT EXISTS                         \n"
-  "  decryptionkeys(                                  \n"
-  "    key_id              INTEGER PRIMARY KEY,       \n"
-  "    key_name            BLOB NOT NULL,             \n"
-  "    key_buf             BLOB NOT NULL              \n"
-  "  );                                               \n"
-  "CREATE UNIQUE INDEX IF NOT EXISTS                  \n"
-  "   KeyNameIndex ON decryptionkeys(key_name);       \n";
+static const std::string INITIALIZATION = R"_DBTEXT_(
+CREATE TABLE IF NOT EXISTS
+  decryptionkeys(
+    key_id              INTEGER PRIMARY KEY,
+    key_name            BLOB NOT NULL,
+    key_buf             BLOB NOT NULL
+  );
+CREATE UNIQUE INDEX IF NOT EXISTS
+   KeyNameIndex ON decryptionkeys(key_name);
+)_DBTEXT_";
 
 class ConsumerDB::Impl
 {
@@ -47,14 +47,10 @@ public:
   {
     // open Database
 
-    int result = sqlite3_open_v2(dbPath.c_str(), &m_database,
+    int result = sqlite3_open_v2(dbPath.c_str(),
+                                 &m_database,
                                  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
-#ifdef NDN_CXX_DISABLE_SQLITE3_FS_LOCKING
-                                 "unix-dotfile"
-#else
-                                 nullptr
-#endif
-                                 );
+                                 nullptr);
 
     if (result != SQLITE_OK)
       BOOST_THROW_EXCEPTION(Error("GroupManager DB cannot be opened/created: " + dbPath));
@@ -89,8 +85,8 @@ const Buffer
 ConsumerDB::getKey(const Name& keyName) const
 {
   Sqlite3Statement statement(m_impl->m_database,
-                             "SELECT key_buf FROM decryptionkeys\
-                              WHERE key_name=?");
+                             R"_DBTEXT_(SELECT key_buf FROM decryptionkeys
+                             WHERE key_name=?)_DBTEXT_");
   statement.bind(1, keyName.wireEncode(), SQLITE_TRANSIENT);
 
   Buffer result;
@@ -104,10 +100,10 @@ void
 ConsumerDB::addKey(const Name& keyName, const Buffer& keyBuf)
 {
   Sqlite3Statement statement(m_impl->m_database,
-                             "INSERT INTO decryptionkeys(key_name, key_buf)\
-                              values (?, ?)");
+                             R"_DBTEXT_(INSERT INTO decryptionkeys(key_name, key_buf)
+                             values (?, ?))_DBTEXT_");
   statement.bind(1, keyName.wireEncode(), SQLITE_TRANSIENT);
-  statement.bind(2, keyBuf.buf(), keyBuf.size(), SQLITE_TRANSIENT);
+  statement.bind(2, keyBuf.data(), keyBuf.size(), SQLITE_TRANSIENT);
 
   if (statement.step() != SQLITE_DONE)
     BOOST_THROW_EXCEPTION(Error("Cannot add the key to database"));
@@ -117,7 +113,7 @@ void
 ConsumerDB::deleteKey(const Name& keyName)
 {
   Sqlite3Statement statement(m_impl->m_database,
-                             "DELETE FROM decryptionkeys WHERE key_name=?");
+                             R"_DBTEXT_(DELETE FROM decryptionkeys WHERE key_name=?)_DBTEXT_");
   statement.bind(1, keyName.wireEncode(), SQLITE_TRANSIENT);
   statement.step();
 }

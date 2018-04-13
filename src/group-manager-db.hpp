@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
 #ifndef GEP_GROUP_MANAGER_DB_HPP
@@ -38,8 +38,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
+    explicit Error(const std::string& what)
       : std::runtime_error(what)
     {
     }
@@ -49,8 +48,7 @@ public:
   /**
    * @brief Create the database of group manager at path @p dbPath.
    */
-  explicit
-  GroupManagerDB(const std::string& dbPath);
+  explicit GroupManagerDB(const std::string& dbPath);
 
   ~GroupManagerDB();
 
@@ -147,8 +145,7 @@ public:
    * @throw Error if add operation fails, e.g., the added member exists
    */
   void
-  addMember(const std::string& scheduleName, const Name& keyName,
-            const Buffer& key);
+  addMember(const std::string& scheduleName, const Name& keyName, const Buffer& key);
 
   /**
    * @brief Change the schedule of a member with name @p identity to a schedule with @p scheduleName

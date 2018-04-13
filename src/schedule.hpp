@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -16,11 +16,11 @@
  * You should have received a copy of the GNU General Public License along with
  * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author Zhiyi Zhang <dreamerbarrychang@gmail.com>
+ * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
-#ifndef NDN_GEP_SECHEDULE_HPP
-#define NDN_GEP_SECHEDULE_HPP
+#ifndef NDN_GEP_SCHEDULE_HPP
+#define NDN_GEP_SCHEDULE_HPP
 
 #include "common.hpp"
 #include "repetitive-interval.hpp"
@@ -39,8 +39,7 @@ class Schedule
 public:
   Schedule();
 
-  explicit
-  Schedule(const Block& block);
+  explicit Schedule(const Block& block);
 
 public:
   template<encoding::Tag TAG>
@@ -82,4 +81,4 @@ private:
 } // namespace gep
 } // namespace ndn
 
-#endif // NDN_GROUP_ENCRYPT_SECHEDULE_HPP
+#endif // NDN_GEP_SCHEDULE_HPP

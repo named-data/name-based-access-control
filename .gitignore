@@ -6,3 +6,4 @@
 build/
 VERSION
 unit-tests.conf
+.vscode

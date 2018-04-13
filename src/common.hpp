@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California
+ * Copyright (c) 2014-2018,  Regents of the University of California
  *
  * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
  * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
@@ -46,16 +46,22 @@
 #include <cstddef>
 #include <list>
 #include <map>
-#include <set>
 #include <queue>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include <ndn-cxx/common.hpp>
-#include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/util/signal.hpp>
+#include <ndn-cxx/link.hpp>
+
+#include <ndn-cxx/security/v2/validation-callback.hpp>
+#include <ndn-cxx/security/v2/validation-error.hpp>
+#include <ndn-cxx/security/v2/validator.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -92,6 +98,13 @@ using ndn::Data;
 using ndn::Name;
 using ndn::Exclude;
 using ndn::Block;
+
+using security::v2::Certificate;
+using ndn::security::v2::Validator;
+using ndn::security::ValidatorNull;
+using security::v2::DataValidationSuccessCallback;
+using security::v2::DataValidationFailureCallback;
+using security::v2::ValidationError;
 
 namespace tlv {
 using namespace ndn::tlv;
