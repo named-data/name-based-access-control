@@ -4,20 +4,18 @@ from waflib import Utils
 top = '..'
 
 def build(bld):
-    test_main = bld(
+    bld.objects(
         target='tests-main',
-        name='tests-main',
-        features='cxx',
-        source=bld.path.ant_glob(['main.cpp']),
-        use='ndn-group-encrypt',
-        )
+        source='main.cpp',
+        use='libndn-nac')
 
-    unit_test = bld.program(
-        target="../unit-tests",
+    config_path = 'TMP_TESTS_PATH="%s"' % bld.bldnode.make_node('tmp-files')
+
+    bld.program(
+        target='../unit-tests',
+        name='unit-tests',
         source=bld.path.ant_glob(['unit-tests/**/*.cpp']),
-        features=['cxx', 'cxxprogram'],
-        use='ndn-group-encrypt tests-main',
+        use='tests-main',
         includes=['.'],
         install_path=None,
-	defines='TMP_TESTS_PATH=\"%s/tmp-tests\"' % bld.bldnode,
-        )
+        defines=[config_path])

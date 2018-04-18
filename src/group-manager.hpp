@@ -1,26 +1,26 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2018,  Regents of the University of California
+ * Copyright (c) 2014-2018, Regents of the University of California
  *
- * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
- * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
+ * This file is part of NAC (Name-Based Access Control for NDN).
+ * See AUTHORS.md for complete list of NAC authors and contributors.
  *
- * ndn-group-encrypt is free software: you can redistribute it and/or modify it under the terms
+ * NAC is free software: you can redistribute it and/or modify it under the terms
  * of the GNU General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  *
- * ndn-group-encrypt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * NAC is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ * NAC, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 
-#ifndef NDN_GEP_GROUP_MANAGER_HPP
-#define NDN_GEP_GROUP_MANAGER_HPP
+#ifndef NDN_NAC_GROUP_MANAGER_HPP
+#define NDN_NAC_GROUP_MANAGER_HPP
 
 #include "group-manager-db.hpp"
 #include "algo/rsa.hpp"
@@ -28,7 +28,7 @@
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndn {
-namespace gep {
+namespace nac {
 
 class GroupManager
 {
@@ -36,10 +36,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
 public:
@@ -103,8 +100,7 @@ public:
   void
   updateMemberSchedule(const Name& identity, const std::string& scheduleName);
 
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE :
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
    * @brief Calculate interval that covers @p timeslot
    * and fill @p memberKeys with the info of members who is allowed to access the interval.
@@ -157,7 +153,7 @@ private:
   KeyChain m_keyChain;
 };
 
-} // namespace gep
+} // namespace nac
 } // namespace ndn
 
-#endif // NDN_GEP_GROUP_MANAGER_HPP
+#endif // NDN_NAC_GROUP_MANAGER_HPP

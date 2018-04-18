@@ -1,5 +1,5 @@
-ndn-group-encrypt authors
-===============
+NAC Authors
+===========
 
 ## The primary authors are (and/or have been):
 

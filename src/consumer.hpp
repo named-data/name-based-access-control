@@ -2,26 +2,26 @@
 /**
  * Copyright (c) 2014-2018, Regents of the University of California
  *
- * This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
- * See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
+ * This file is part of NAC (Name-Based Access Control for NDN).
+ * See AUTHORS.md for complete list of NAC authors and contributors.
  *
- * ndn-group-encrypt is free software: you can redistribute it and/or modify it under the terms
+ * NAC is free software: you can redistribute it and/or modify it under the terms
  * of the GNU General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  *
- * ndn-group-encrypt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * NAC is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ * NAC, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author Zhiyi Zhang <zhiyi@cs.ucla.edu>
  * @author Yingdi Yu <yingdi@cs.ucla.edu>
  */
 
-#ifndef NDN_GEP_CONSUMER_HPP
-#define NDN_GEP_CONSUMER_HPP
+#ifndef NDN_NAC_CONSUMER_HPP
+#define NDN_NAC_CONSUMER_HPP
 
 #include "common.hpp"
 #include "consumer-db.hpp"
@@ -32,7 +32,7 @@
 #include <ndn-cxx/security/validator-null.hpp>
 
 namespace ndn {
-namespace gep {
+namespace nac {
 
 typedef function<void(const Data&, const Buffer&)> ConsumptionCallBack;
 
@@ -212,7 +212,7 @@ private:
   std::map<Name, Buffer> m_dKeyMap;
 };
 
-} // namespace gep
+} // namespace nac
 } // namespace ndn
 
-#endif // NDN_GEP_CONSUMER_HPP
+#endif // NDN_NAC_CONSUMER_HPP

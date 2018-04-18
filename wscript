@@ -1,46 +1,27 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-"""
-Copyright (c) 2014-2015,  Regents of the University of California
+from waflib import Context, Logs, Utils
+import os, subprocess
 
-This file is part of ndn-group-encrypt (Group-based Encryption Protocol for NDN).
-See AUTHORS.md for complete list of ndn-group-encrypt authors and contributors.
-
-ndn-group-encrypt is free software: you can redistribute it and/or modify it under the terms
-of the GNU General Public License as published by the Free Software Foundation,
-either version 3 of the License, or (at your option) any later version.
-
-ndn-group-encrypt is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with
-ndn-group-encrypt, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
-"""
-
-VERSION = "0.0.1"
-APPNAME = "libndn-group-encrypt"
-PACKAGE_BUGREPORT = "http://redmine.named-data.net/projects/gep"
-PACKAGE_URL = "http://named-data.net/doc/ndn-group-encrypt/"
-GIT_TAG_PREFIX = "ndn-group-encrypt"
-
-from waflib import Logs, Utils, Context
-import os
+VERSION = '0.1.0'
+APPNAME = 'ndn-nac'
+PACKAGE_BUGREPORT = "http://redmine.named-data.net/projects/nac"
+GIT_TAG_PREFIX = "ndn-nac-"
 
 def options(opt):
     opt.load(['compiler_c', 'compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'default-compiler-flags', 'sanitizers', 'doxygen'],
+    opt.load(['boost', 'default-compiler-flags', 'sanitizers', 'coverage', 'doxygen'],
              tooldir=['.waf-tools'])
 
-    syncopt = opt.add_option_group ("NDN-GROUP-ENCRYPT Options")
+    opt = opt.add_option_group ("NDN-NAC Options")
 
-    syncopt.add_option('--debug', action='store_true', default=False, dest='debug',
-                       help='''debugging mode''')
-    syncopt.add_option('--with-tests', action='store_true', default=False, dest='_tests',
-                       help='''build unit tests''')
+    opt.add_option('--with-tests', action='store_true', default=False, dest='with_tests',
+                   help='''Build unit tests''')
 
 def configure(conf):
     conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'sanitizers', 'doxygen'])
+
+    conf.env['WITH_TESTS'] = conf.options.with_tests
 
     if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
@@ -48,130 +29,143 @@ def configure(conf):
                    uselib_store='NDN_CXX', mandatory=True)
 
     boost_libs = 'system iostreams'
-    if conf.options._tests:
-        conf.env['NDN_GEP_HAVE_TESTS'] = 1
-        conf.define('NDN_GEP_HAVE_TESTS', 1);
+    if conf.env['WITH_TESTS']:
+        conf.define('NDN_NAC_HAVE_TESTS', 1);
         boost_libs += ' unit_test_framework'
 
     conf.check_boost(lib=boost_libs)
 
+    conf.check_compiler_flags()
+
+    # Loading "late" to prevent tests from being compiled with profiling flags
+    conf.load('coverage')
+
+    conf.load('sanitizers')
+
+    conf.define('SYSCONFDIR', conf.env['SYSCONFDIR'])
+    
     conf.write_config_header('config.hpp')
 
 def build(bld):
-    libndn_group_encrypt = bld(
-        target="ndn-group-encrypt",
-        # vnum = "0.0.1",
-        features=['cxx', 'cxxshlib'],
+    version(bld)
+
+    bld.shlib(
+        target="libndn-nac",
+        vnum=VERSION_BASE,
+        cnum=VERSION_BASE,
         source =  bld.path.ant_glob(['src/**/*.cpp']),
         use = 'BOOST NDN_CXX CRYPTOPP',
         includes = ['src', '.'],
-        export_includes=['src', '.'],
-        )
+        export_includes=['src', '.'])
 
     # Unit tests
-    if bld.env["NDN_GEP_HAVE_TESTS"]:
+    if bld.env['WITH_TESTS']:
         bld.recurse('tests')
 
     bld.install_files(
         dest = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],
         files = bld.path.ant_glob(['src/**/*.hpp', 'src/**/*.h', 'common.hpp']),
         cwd = bld.path.find_dir("src"),
-        relative_trick = True,
-        )
-
+        relative_trick = True)
 
     bld.install_files(
         dest = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],
         files = bld.path.get_bld().ant_glob(['src/**/*.hpp', 'common.hpp', 'config.hpp']),
         cwd = bld.path.get_bld().find_dir("src"),
-        relative_trick = False,
-        )
+        relative_trick = False )
 
     bld(features = "subst",
-        source='ndn-group-encrypt.pc.in',
-        target='ndn-group-encrypt.pc',
+        source='libndn-nac.pc.in',
+        target='libndn-nac.pc',
         install_path = '${LIBDIR}/pkgconfig',
         PREFIX       = bld.env['PREFIX'],
-        INCLUDEDIR   = "%s/ndn-group-encrypt" % bld.env['INCLUDEDIR'],
-        VERSION      = VERSION,
-        )
+        INCLUDEDIR   = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
+        VERSION      = VERSION)
 
 def docs(bld):
     from waflib import Options
-    Options.commands = ['doxygen'] + Options.commands
+    Options.commands = ['doxygen', 'sphinx'] + Options.commands
 
 def doxygen(bld):
     version(bld)
 
     if not bld.env.DOXYGEN:
-        Logs.error("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
-    else:
-        bld(features="subst",
-            name="doxygen-conf",
-            source=["docs/doxygen.conf.in",
-                    "docs/named_data_theme/named_data_footer-with-analytics.html.in"],
-            target=["docs/doxygen.conf",
-                    "docs/named_data_theme/named_data_footer-with-analytics.html"],
-            VERSION=VERSION,
-            HTML_FOOTER="../build/docs/named_data_theme/named_data_footer-with-analytics.html" \
-                          if os.getenv('GOOGLE_ANALYTICS', None) \
-                          else "../docs/named_data_theme/named_data_footer.html",
-            GOOGLE_ANALYTICS=os.getenv('GOOGLE_ANALYTICS', ""),
-            )
+        bld.fatal('Cannot build documentation ("doxygen" not found in PATH)')
 
-        bld(features="doxygen",
-            doxyfile='docs/doxygen.conf',
-            use="doxygen-conf")
+    bld(features='subst',
+        name='doxygen.conf',
+        source=['docs/doxygen.conf.in',
+                'docs/named_data_theme/named_data_footer-with-analytics.html.in'],
+        target=['docs/doxygen.conf',
+                'docs/named_data_theme/named_data_footer-with-analytics.html'],
+        VERSION=VERSION,
+        HTML_FOOTER='../build/docs/named_data_theme/named_data_footer-with-analytics.html' \
+                        if os.getenv('GOOGLE_ANALYTICS', None) \
+                        else '../docs/named_data_theme/named_data_footer.html',
+        GOOGLE_ANALYTICS=os.getenv('GOOGLE_ANALYTICS', ''))
+
+    bld(features='doxygen',
+        doxyfile='docs/doxygen.conf',
+        use='doxygen.conf')
+
+def sphinx(bld):
+    version(bld)
+
+    if not bld.env.SPHINX_BUILD:
+        bld.fatal('Cannot build documentation ("sphinx-build" not found in PATH)')
+
+    bld(features='sphinx',
+        config='docs/conf.py',
+        outdir='docs',
+        source=bld.path.ant_glob('docs/**/*.rst'),
+        VERSION=VERSION)
 
 def version(ctx):
+    # don't execute more than once
     if getattr(Context.g_module, 'VERSION_BASE', None):
         return
 
     Context.g_module.VERSION_BASE = Context.g_module.VERSION
-    Context.g_module.VERSION_SPLIT = [v for v in VERSION_BASE.split('.')]
+    Context.g_module.VERSION_SPLIT = VERSION_BASE.split('.')
 
-    didGetVersion = False
+    # first, try to get a version string from git
+    gotVersionFromGit = False
     try:
         cmd = ['git', 'describe', '--always', '--match', '%s*' % GIT_TAG_PREFIX]
-        p = Utils.subprocess.Popen(cmd, stdout=Utils.subprocess.PIPE,
-                                   stderr=None, stdin=None)
-        out = str(p.communicate()[0].strip())
-        didGetVersion = (p.returncode == 0 and out != "")
-        if didGetVersion:
+        out = subprocess.check_output(cmd, universal_newlines=True).strip()
+        if out:
+            gotVersionFromGit = True
             if out.startswith(GIT_TAG_PREFIX):
-                Context.g_module.VERSION = out[len(GIT_TAG_PREFIX):]
+                Context.g_module.VERSION = out.lstrip(GIT_TAG_PREFIX)
             else:
-                Context.g_module.VERSION = "%s-commit-%s" % (Context.g_module.VERSION_BASE, out)
-    except OSError:
+                # no tags matched
+                Context.g_module.VERSION = '%s-commit-%s' % (VERSION_BASE, out)
+    except subprocess.CalledProcessError:
         pass
 
     versionFile = ctx.path.find_node('VERSION')
-
-    if not didGetVersion and versionFile is not None:
+    if not gotVersionFromGit and versionFile is not None:
         try:
             Context.g_module.VERSION = versionFile.read()
             return
-        except (OSError, IOError):
+        except EnvironmentError:
             pass
 
     # version was obtained from git, update VERSION file if necessary
     if versionFile is not None:
         try:
-            version = versionFile.read()
-            if version == Context.g_module.VERSION:
-                return # no need to update
-        except (OSError, IOError):
-            Logs.warn("VERSION file exists, but not readable")
+            if versionFile.read() == Context.g_module.VERSION:
+                # already up-to-date
+                return
+        except EnvironmentError as e:
+            Logs.warn('%s exists but is not readable (%s)' % (versionFile, e.strerror))
     else:
         versionFile = ctx.path.make_node('VERSION')
 
-    if versionFile is None:
-        return
-
     try:
         versionFile.write(Context.g_module.VERSION)
-    except (OSError, IOError):
-        Logs.warn("VERSION file is not writeable")
+    except EnvironmentError as e:
+        Logs.warn('%s is not writable (%s)' % (versionFile, e.strerror))
 
 def dist(ctx):
     version(ctx)
