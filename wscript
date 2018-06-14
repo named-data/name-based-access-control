@@ -62,9 +62,9 @@ def build(bld):
         includes = ['src', '.'],
         export_includes=['src', '.'])
 
-    # # Unit tests
-    # if bld.env['WITH_TESTS']:
-    #     bld.recurse('tests')
+    # Unit tests
+    if bld.env['WITH_TESTS']:
+        bld.recurse('tests')
 
     bld.install_files(
         dest = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
