@@ -1,0 +1,9 @@
+prefix=@PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: libndn-nac
+Description: NDN Name-Based Access Control library
+Version: @VERSION@
+Libs: -L${libdir} -llibndn-nac
+Cflags: -I${includedir}
