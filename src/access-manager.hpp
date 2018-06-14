@@ -32,9 +32,9 @@ namespace nac {
  *
  * Access Manager controls decryption policy by publishing granular per-namespace access
  * policies in the form of key encryption (KEK, plaintext public) and key decryption (KDK,
- * encrypted private keys) key pairs.
+ * encrypted private key) key pair.
  *
- * TODO Allow rolling KEK
+ * @todo Rolling KEK
  */
 class AccessManager
 {
@@ -54,11 +54,11 @@ public:
    * @param keyChain KeyChain
    * @param face Face that will be used to publish KEK and KDKs
    *
-   * Additional info:
+   * KEK and KDK naming:
    *
-   *     [identity]/NAC/[dataset]/KEK            || /[key-id]                           (== KEK, public key)
+   *     [identity]/NAC/[dataset]/KEK            /[key-id]                           (== KEK, public key)
    *
-   *     [identity]/NAC/[dataset]/KDK/[key-id]   || /ENCRYPTED-BY/[user]/KEY/[key-id]   (== KDK, encrypted private key)
+   *     [identity]/NAC/[dataset]/KDK/[key-id]   /ENCRYPTED-BY/[user]/KEY/[key-id]   (== KDK, encrypted private key)
    *
    *     \_____________  ______________/
    *                   \/
@@ -101,10 +101,10 @@ public: // accessor interface for published data packets
     return m_ims.size();
   }
 
-  /** @brief Returns begin iterator of the in-memory storage ordering by
+  /** @brief Returns begin iterator of the in-memory storage ordered by
    *  name with digest
    *
-   *  @return{ const_iterator pointing to the beginning of the m_cache }
+   *  @return{ const_iterator pointing to the beginning of m_cache }
    */
   InMemoryStorage::const_iterator
   begin() const
@@ -112,10 +112,10 @@ public: // accessor interface for published data packets
     return m_ims.begin();
   }
 
-  /** @brief Returns end iterator of the in-memory storage ordering by
+  /** @brief Returns end iterator of the in-memory storage ordered by
    *  name with digest
    *
-   *  @return{ const_iterator pointing to the end of the m_cache }
+   *  @return{ const_iterator pointing to the end of m_cache }
    */
   InMemoryStorage::const_iterator
   end() const
@@ -129,27 +129,7 @@ private:
   KeyChain& m_keyChain;
   Face& m_face;
 
-  // this interface should be general enough to allow plugging in other things
-
-  // /**
-  //  * Should be interface (persisent or in memory) for storing and serving encrypted KDKs
-  //  */
-  // class KdkStorage
-  // {
-  // public:
-  //   void
-  //   addKdk(Data kdk);
-
-  //   void
-  //   removeKdk(const Name& kdkName);
-
-  //   // stuff to serve
-
-  // private:
-  //   InMemoryStorage m_ims;
-  // };
-
-  InMemoryStoragePersistent m_ims;
+  InMemoryStoragePersistent m_ims; // for KEK and KDKs
   const RegisteredPrefixId* m_kekRegId;
   const RegisteredPrefixId* m_kdkRegId;
 };

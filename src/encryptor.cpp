@@ -1,0 +1,189 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (c) 2014-2018, Regents of the University of California
+ *
+ * NAC library is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * NAC library is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+ *
+ * You should have received copies of the GNU General Public License and GNU Lesser
+ * General Public License along with ndn-cxx, e.g., in COPYING.md file.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * See AUTHORS.md for complete list of NAC library authors and contributors.
+ */
+
+#include "encryptor.hpp"
+
+#include <ndn-cxx/util/logger.hpp>
+#include <boost/lexical_cast.hpp>
+
+namespace ndn {
+namespace nac {
+
+NDN_LOG_INIT(nac.Encryptor);
+
+const size_t N_RETRIES = 3;
+
+Encryptor::Encryptor(const Name& accessPrefix,
+                     const Name& ckPrefix, SigningInfo ckDataSigningInfo,
+                     const ErrorCallback& onFailure,
+                     Validator& validator, KeyChain& keyChain, Face& face)
+  : m_accessPrefix{accessPrefix}
+  , m_ckPrefix{ckPrefix}
+  , m_ckBits{AES_KEY_SIZE}
+  , m_ckDataSigningInfo{std::move(ckDataSigningInfo)}
+  , m_isKekRetrievalInProgress(false)
+  , m_ckRegId{nullptr}
+  , m_keyChain{keyChain}
+  , m_face{face}
+{
+  regenerateCk(onFailure);
+
+  auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+    auto data = m_ims.find(interest);
+    if (data != nullptr) {
+      NDN_LOG_DEBUG("Serving " << data->getName() << " from InMemoryStorage");
+      m_face.put(*data);
+    }
+    else {
+      NDN_LOG_DEBUG("Didn't find CK data for " << interest.getName());
+      // send NACK?
+    }
+  };
+
+  auto handleError = [] (const Name& prefix, const std::string& msg) {
+    NDN_LOG_ERROR("Failed to register prefix " << prefix << ": " << msg);
+  };
+
+  m_ckRegId = m_face.setInterestFilter(Name(ckPrefix).append(CK), serveFromIms, handleError);
+}
+
+Encryptor::~Encryptor()
+{
+  m_face.unsetInterestFilter(m_ckRegId);
+  if (m_kekPendingInterest != nullptr) {
+    m_face.removePendingInterest(m_kekPendingInterest);
+  }
+}
+
+void
+Encryptor::regenerateCk(const ErrorCallback& onFailure)
+{
+  m_ckName = m_ckPrefix;
+  m_ckName
+    .append(CK)
+    .appendVersion(); // version = ID of CK
+  random::generateSecureBytes(m_ckBits.data(), m_ckBits.size());
+
+  NDN_LOG_DEBUG("Generating new CK: " << m_ckName);
+
+  // one implication: if CK updated before KEK fetched, KDK for the old CK will not be published
+  if (!m_kek) {
+    m_isKekRetrievalInProgress = true;
+    fetchKekAndPublishCkData([&] {
+        NDN_LOG_DEBUG("KEK retrieved and published");
+        m_isKekRetrievalInProgress = false;
+      },
+      [&] (const ErrorCode&, const std::string& msg) {
+        NDN_LOG_ERROR("Failed to retrieved KEK: " + msg);
+        m_isKekRetrievalInProgress = false;
+      },
+      N_RETRIES);
+  }
+  else {
+    makeAndPublishCkData(onFailure);
+  }
+}
+
+EncryptedContent
+Encryptor::encrypt(const uint8_t* data, size_t size)
+{
+  // Generate initial vector
+  auto iv = make_shared<Buffer>(AES_IV_SIZE);
+  random::generateSecureBytes(iv->data(), iv->size());
+
+  OBufferStream os;
+  security::transform::bufferSource(data, size)
+    >> security::transform::blockCipher(BlockCipherAlgorithm::AES_CBC,
+                                        CipherOperator::ENCRYPT,
+                                        m_ckBits.data(), m_ckBits.size(), iv->data(), iv->size())
+    >> security::transform::streamSink(os);
+
+  EncryptedContent content;
+  content.setIv(iv);
+  content.setPayload(os.buf());
+  content.setKeyLocator(m_ckName);
+
+  return content;
+}
+
+void
+Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
+                                    const ErrorCallback& onFailure,
+                                    size_t nTriesLeft)
+{
+  // interest for <access-prefix>/KEK to retrieve  <access-prefix>/KEK/<key-id> KekData
+
+  NDN_LOG_DEBUG("Fetching KEK " << Name(m_accessPrefix).append(KEK));
+
+  BOOST_ASSERT(m_kekPendingInterest == nullptr);
+  m_kekPendingInterest =
+    m_face.expressInterest(Interest(Name(m_accessPrefix).append(KEK))
+                             .setMustBeFresh(true)
+                             .setCanBePrefix(true),
+                           [=] (const Interest&, const Data& kek) {
+                             m_kekPendingInterest = nullptr;
+                             // @todo verify if the key is legit
+                             m_kek = kek;
+                             makeAndPublishCkData(onFailure);
+                             // otherwise, failure has been already declared
+                           },
+                           [=] (const Interest& i, const lp::Nack& nack) {
+                             m_kekPendingInterest = nullptr;
+                             onFailure(ErrorCode::KekRetrievalFailure,
+                                       "Retrieval of KEK [" + i.getName().toUri() + "] failed. "
+                                       "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
+                           },
+                           [=] (const Interest& i) {
+                             m_kekPendingInterest = nullptr;
+                             if (nTriesLeft > 1) {
+                               fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
+                             }
+                             else {
+                               onFailure(ErrorCode::KekRetrievalTimeout,
+                                         "Retrieval of KEK [" + i.getName().toUri() + "] timed out");
+                             }
+                           });
+}
+
+void
+Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
+{
+  try {
+    PublicKey kek;
+    kek.loadPkcs8(m_kek->getContent().value(), m_kek->getContent().value_size());
+
+    EncryptedContent content;
+    content.setPayload(kek.encrypt(m_ckBits.data(), m_ckBits.size()));
+
+    auto ckData = make_shared<Data>(Name(m_ckName).append(ENCRYPTED_BY).append(m_kek->getName()));
+    ckData->setContent(content.wireEncode());
+    // FreshnessPeriod can serve as a soft access control for revoking access
+    ckData->setFreshnessPeriod(DEFAULT_CK_FRESHNESS_PERIOD);
+    m_keyChain.sign(*ckData, m_ckDataSigningInfo);
+    m_ims.insert(*ckData);
+
+    NDN_LOG_DEBUG("Publishing CK data: " << ckData->getName());
+  }
+  catch (const std::runtime_error& error) {
+    onFailure(ErrorCode::EncryptionFailure, "Failed to encrypt generated CK with KEK " + m_kek->getName().toUri());
+  }
+}
+
+} // namespace nac
+} // namespace ndn

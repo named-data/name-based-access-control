@@ -32,15 +32,14 @@ namespace nac {
  *
  * <code>
  *     EncryptedContent ::= ENCRYPTED-CONTENT-TYPE TLV-LENGTH
- *                            InitialVector
+ *                            InitializationVector
  *                            EncryptedPayload
  *                            EncryptedPayloadKey
  *                            Name
  *
- *     InitialVector ::= INITIAL-VECTOR-TYPE TLV-LENGTH(=N) BYTE{N}
+ *     InitializationVector ::= INITIALIZATION-VECTOR-TYPE TLV-LENGTH(=N) BYTE{N}
  *     EncryptedPayload ::= ENCRYPTED-PAYLOAD-TYPE TLV-LENGTH(=N) BYTE{N}
  *     EncryptedPayloadKey ::= ENCRYPTED-PAYLOAD-KEY-TYPE TLV-LENGTH(=N) BYTE{N}
- *     InitialVector ::= INITIAL-VECTOR-TYPE TLV-LENGTH(=N) BYTE{N}
  * </code>
  */
 class EncryptedContent

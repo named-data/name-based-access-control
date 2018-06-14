@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(Iv)
 
   content.setIv(randomBlock);
   BOOST_REQUIRE(content.hasIv());
-  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitialVector);
+  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitializationVector);
   BOOST_CHECK_EQUAL(content.getIv().blockFromValue(), randomBlock);
 
   content.unsetIv();
@@ -88,13 +88,13 @@ BOOST_AUTO_TEST_CASE(Iv)
 
   content.setIv(randomBuffer);
   BOOST_REQUIRE(content.hasIv());
-  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitialVector);
+  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitializationVector);
   BOOST_CHECK_THROW(content.getIv().blockFromValue(), tlv::Error);
   BOOST_CHECK_EQUAL(content.getIv().value_size(), randomBuffer->size());
 
   content = EncryptedContent("82[13]=84050103000000850A00000000000000000000"_block);
   BOOST_REQUIRE(content.hasIv());
-  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitialVector);
+  BOOST_CHECK_EQUAL(content.getIv().type(), tlv::InitializationVector);
   BOOST_CHECK_THROW(content.getIv().blockFromValue(), tlv::Error);
   BOOST_CHECK_EQUAL(content.getIv().value_size(), randomBuffer->size());
 }

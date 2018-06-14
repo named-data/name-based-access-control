@@ -61,8 +61,8 @@ EncryptedContent&
 EncryptedContent::setIv(Block iv)
 {
   m_wire.reset();
-  if (iv.type() != tlv::InitialVector) {
-    m_iv = Block(tlv::InitialVector, std::move(iv));
+  if (iv.type() != tlv::InitializationVector) {
+    m_iv = Block(tlv::InitializationVector, std::move(iv));
   }
   else {
     m_iv = std::move(iv);
@@ -74,7 +74,7 @@ EncryptedContent&
 EncryptedContent::setIv(ConstBufferPtr iv)
 {
   m_wire.reset();
-  m_iv = Block(tlv::InitialVector, iv);
+  m_iv = Block(tlv::InitializationVector, iv);
   return *this;
 }
 
@@ -204,7 +204,7 @@ EncryptedContent::wireDecode(const Block& wire)
     BOOST_THROW_EXCEPTION(Error("Required EncryptedPayload not found in EncryptedContent"));
   }
 
-  block = m_wire.find(tlv::InitialVector);
+  block = m_wire.find(tlv::InitializationVector);
   if (block != m_wire.elements_end()) {
     m_iv = *block;
   }

@@ -47,6 +47,7 @@ AccessManager::AccessManager(const Identity& identity, const Name& dataset,
 
   auto kek = make_shared<Data>(m_nacKey.getDefaultCertificate());
   kek->setName(Name(kekPrefix).append(nacKeyId));
+  kek->setFreshnessPeriod(DEFAULT_KEK_FRESHNESS_PERIOD);
   m_keyChain.sign(*kek, signingByIdentity(m_identity));
   // kek looks like a cert, but doesn't have ValidityPeriod
   m_ims.insert(*kek);
@@ -112,7 +113,8 @@ AccessManager::addMember(const Certificate& memberCert)
 
   auto kdk = make_shared<Data>(kdkName);
   kdk->setContent(content.wireEncode());
-  kdk->setFreshnessPeriod(1_h); // this can serve as soft access control for revoking access
+  // FreshnessPeriod can serve as a soft access control for revoking access
+  kdk->setFreshnessPeriod(DEFAULT_KDK_FRESHNESS_PERIOD);
   m_keyChain.sign(*kdk, signingByIdentity(m_identity));
 
   m_ims.insert(*kdk);

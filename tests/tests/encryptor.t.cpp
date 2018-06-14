@@ -1,0 +1,187 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (c) 2014-2018, Regents of the University of California
+ *
+ * NAC library is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * NAC library is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
+ *
+ * You should have received copies of the GNU General Public License and GNU Lesser
+ * General Public License along with ndn-cxx, e.g., in COPYING.md file.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * See AUTHORS.md for complete list of NAC library authors and contributors.
+ */
+
+#include "encryptor.hpp"
+
+#include "tests-common.hpp"
+#include "dummy-forwarder.hpp"
+#include "static-data.hpp"
+
+#include <iostream>
+#include <ndn-cxx/util/string-helper.hpp>
+
+namespace ndn {
+namespace nac {
+namespace tests {
+
+class StaticDataEnvironment : public UnitTestTimeFixture
+{
+public:
+  StaticDataEnvironment()
+    : fw(m_io, m_keyChain)
+    , imsFace(static_cast<util::DummyClientFace&>(fw.addFace()))
+  {
+    StaticData data;
+    for (const auto& block : data.managerPackets) {
+      auto data = make_shared<Data>(block);
+      m_ims.insert(*data);
+    }
+
+    auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+      auto data = m_ims.find(interest);
+      if (data != nullptr) {
+        imsFace.put(*data);
+      }
+    };
+    imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
+    advanceClocks(1_ms, 10);
+  }
+
+public:
+  DummyForwarder fw;
+  util::DummyClientFace& imsFace;
+  InMemoryStoragePersistent m_ims;
+};
+
+class EncryptorFixture : public StaticDataEnvironment
+{
+public:
+  EncryptorFixture()
+    : face(static_cast<util::DummyClientFace&>(fw.addFace()))
+    , encryptor("/access/policy/identity/NAC/dataset", "/some/ck/prefix", signingWithSha256(),
+                [] (auto&&...) {},
+                validator, m_keyChain, face)
+  {
+    advanceClocks(1_ms, 10);
+  }
+
+public:
+  util::DummyClientFace& face;
+  ValidatorNull validator;
+  Encryptor encryptor;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestEncryptor, EncryptorFixture)
+
+BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
+{
+  std::string plaintext = "Data to encrypt";
+  auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
+
+  EncryptedContent content(block);
+  auto ckPrefix = content.getKeyLocator();
+  BOOST_CHECK_EQUAL(ckPrefix.getPrefix(-1), "/some/ck/prefix/CK");
+
+  BOOST_CHECK(content.hasIv());
+  BOOST_CHECK_NE(std::string(reinterpret_cast<const char*>(content.getPayload().value()),
+                             content.getPayload().value_size()),
+                 plaintext);
+
+  advanceClocks(1_ms, 10);
+
+  // check that KEK interests has been sent
+  BOOST_CHECK_EQUAL(face.sentInterests.at(0).getName().getPrefix(6),
+                    Name("/access/policy/identity/NAC/dataset/KEK"));
+
+  auto kek = imsFace.sentData.at(0);
+  BOOST_CHECK_EQUAL(kek.getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
+  BOOST_CHECK_EQUAL(kek.getName().size(), 7);
+
+  face.sentData.clear();
+  face.sentInterests.clear();
+
+  face.receive(Interest(ckPrefix)
+               .setCanBePrefix(true).setMustBeFresh(true));
+  advanceClocks(1_ms, 10);
+
+  auto ckName = face.sentData.at(0).getName();
+  BOOST_CHECK_EQUAL(ckName.getPrefix(4), "/some/ck/prefix/CK");
+  BOOST_CHECK_EQUAL(ckName.get(5), name::Component("ENCRYPTED-BY"));
+
+  auto extractedKek = ckName.getSubName(6);
+  BOOST_CHECK_EQUAL(extractedKek, kek.getName());
+}
+
+BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
+{
+  encryptor.regenerateCk([] (auto&&...) {});
+  advanceClocks(1_ms, 10);
+
+  encryptor.regenerateCk([] (auto&&...) {});
+  advanceClocks(1_ms, 10);
+
+  BOOST_CHECK_EQUAL(encryptor.size(), 3);
+  size_t nCk = 0;
+  for (const auto& data : encryptor) {
+    BOOST_TEST_MESSAGE(data.getName());
+    if (data.getName().getPrefix(4) == Name("/some/ck/prefix/CK")) {
+      ++nCk;
+    }
+  }
+  BOOST_CHECK_EQUAL(nCk, 3);
+}
+
+BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test cases
+{
+  if (std::getenv("NAC_DUMP_PACKETS") == nullptr) {
+    return;
+  }
+
+  std::string plaintext = "Data to encrypt";
+
+  std::cerr << "std::vector<Block> encryptedBlobs = {\n";
+  for (size_t i = 0; i < 3; ++i) {
+    std::cerr << "    \"";
+    auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
+    printHex(std::cerr, block.wireEncode().wire(), block.wireEncode().size(), true);
+    if (i < 2) {
+      std::cerr << "\"_block,\n";
+    }
+    else {
+      std::cerr << "\"_block\n";
+    }
+
+    encryptor.regenerateCk([] (auto&&...) {});
+    advanceClocks(1_ms, 10);
+  }
+  std::cerr  << "  };\n\n";
+
+  std::cerr << "std::vector<Block> encryptorPackets = {\n";
+  size_t i = 0;
+  for (const auto& data : encryptor) {
+    std::cerr << "    \"";
+    printHex(std::cerr, data.wireEncode().wire(), data.wireEncode().size(), true);
+
+    if (i < encryptor.size() - 1) {
+      std::cerr << "\"_block,\n";
+    }
+    else {
+      std::cerr << "\"_block\n";
+    }
+
+    ++i;
+  }
+  std::cerr  << "  };\n\n";
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+} // namespace tests
+} // namespace nac
+} // namespace ndn

@@ -90,7 +90,7 @@ using namespace ndn::tlv;
 enum {
   EncryptedContent = 130,
   EncryptedPayload = 132,
-  InitialVector = 133,
+  InitializationVector = 133,
   EncryptedPayloadKey = 134,
 };
 
@@ -104,6 +104,10 @@ const name::Component CK("CK");
 
 const size_t AES_KEY_SIZE = 32;
 const size_t AES_IV_SIZE = 16;
+
+const time::seconds DEFAULT_KEK_FRESHNESS_PERIOD = 1_h;
+const time::seconds DEFAULT_KDK_FRESHNESS_PERIOD = 1_h;
+const time::seconds DEFAULT_CK_FRESHNESS_PERIOD = 1_h;
 
 enum class ErrorCode {
   KekRetrievalFailure = 1,
@@ -120,7 +124,8 @@ enum class ErrorCode {
   CkInvalidName = 23,
 
   MissingRequiredKeyLocator = 101,
-  TpmKeyNotFound = 102
+  TpmKeyNotFound = 102,
+  EncryptionFailure = 103
 };
 
 using ErrorCallback = std::function<void (const ErrorCode&, const std::string&)>;
