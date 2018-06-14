@@ -19,7 +19,7 @@ def options(opt):
                    help='''Build unit tests''')
 
 def configure(conf):
-    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'sanitizers', 'sphinx_build', 'doxygen'])
+    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'sphinx_build', 'doxygen'])
 
     conf.env['WITH_TESTS'] = conf.options.with_tests
 
