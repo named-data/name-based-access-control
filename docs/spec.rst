@@ -120,3 +120,12 @@ The encrypted version of this key is published (asynchronous operation, continge
                       .EncryptedPayload = ContentKey encrypted by public key /[access-namespace]/NAC/[dataset]/KEK/[key-id]
                       // .InitializationVector, .EncryptedPayloadKey, and .Name are not set
                     )
+
+Decryptor
+---------
+
+.. figure:: _static/decryptor.png
+   :alt: Decryptor
+   :align: center
+
+Encryptor decrypts (asynchronous operation, contingent on successful retrieval of CK data, KDK, and decryption of both) the supplied ``EncryptedContent`` element.
