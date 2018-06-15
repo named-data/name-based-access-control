@@ -80,7 +80,7 @@ AccessManager::~AccessManager()
   m_face.unsetInterestFilter(m_kdkRegId);
 }
 
-void
+Data
 AccessManager::addMember(const Certificate& memberCert)
 {
   Name kdkName(m_nacKey.getIdentity());
@@ -118,6 +118,8 @@ AccessManager::addMember(const Certificate& memberCert)
   m_keyChain.sign(*kdk, signingByIdentity(m_identity));
 
   m_ims.insert(*kdk);
+
+  return *kdk;
 }
 
 void

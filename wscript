@@ -52,6 +52,20 @@ def configure(conf):
 def build(bld):
     version(bld)
 
+    bld(features='subst',
+        name='version.hpp',
+        source='src/version.hpp.in',
+        target='src/version.hpp',
+        install_path=None,
+        VERSION_STRING=VERSION_BASE,
+        VERSION_BUILD=VERSION,
+        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
+                int(VERSION_SPLIT[1]) * 1000 +
+                int(VERSION_SPLIT[2]),
+        VERSION_MAJOR=VERSION_SPLIT[0],
+        VERSION_MINOR=VERSION_SPLIT[1],
+        VERSION_PATCH=VERSION_SPLIT[2])
+
     bld.shlib(
         target="ndn-nac",
         name="libndn-nac",
@@ -65,6 +79,8 @@ def build(bld):
     # Unit tests
     if bld.env['WITH_TESTS']:
         bld.recurse('tests')
+
+    bld.recurse('tools')
 
     bld.install_files(
         dest = "%s/ndn-nac" % bld.env['INCLUDEDIR'],

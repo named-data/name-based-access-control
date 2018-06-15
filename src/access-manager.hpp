@@ -75,8 +75,9 @@ public:
   /**
    * @brief Authorize a member identified by its certificate @p memberCert to decrypt data
    *        under the policy
+   * @return published KDK
    */
-  void
+  Data
   addMember(const Certificate& memberCert);
 
   // void
