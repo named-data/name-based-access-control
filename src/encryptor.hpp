@@ -40,7 +40,10 @@ public:
    *                      (each will have unique version appended)
    * @param ckDataSigningInfo  SigningInfo parameters to sign CK Data
    * @param onFailure     Callback to notify application of a failure to create CK data
-   *                      (failed to fetch KEK, failed to encrypt with KEK, etc.)
+   *                      (failed to fetch KEK, failed to encrypt with KEK, etc.).
+   *                      Note that Encryptor will continue trying to retrieve KEK until success
+   *                      (each attempt separated by `RETRY_DELAY_KEK_RETRIEVAL`) and @p onFailure
+   *                      may be called multiple times.
    * @param validator     Validation policy to ensure correctness of KEK
    * @param keyChain      KeyChain
    * @param face          Face that will be used to fetch KEK and publish CK data
@@ -78,7 +81,7 @@ public:
    *       before KEK fetched
    */
   void
-  regenerateCk(const ErrorCallback& onFailure);
+  regenerateCk();
 
 public: // accessor interface for published data packets
 
@@ -114,6 +117,9 @@ public: // accessor interface for published data packets
 
 private:
   void
+  retryFetchingKek();
+
+  void
   fetchKekAndPublishCkData(const std::function<void()>& onReady,
                            const ErrorCallback& onFailure,
                            size_t nTriesLeft);
@@ -130,6 +136,7 @@ private:
 
   bool m_isKekRetrievalInProgress;
   optional<Data> m_kek;
+  ErrorCallback m_onFailure;
 
   InMemoryStoragePersistent m_ims; // for encrypted CKs
   const RegisteredPrefixId* m_ckRegId = nullptr;
@@ -137,6 +144,7 @@ private:
 
   KeyChain& m_keyChain;
   Face& m_face;
+  Scheduler m_scheduler;
 };
 
 } // namespace nac

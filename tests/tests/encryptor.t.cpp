@@ -30,17 +30,15 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-class StaticDataEnvironment : public UnitTestTimeFixture
+class EncryptorStaticDataEnvironment : public UnitTestTimeFixture
 {
 public:
-  StaticDataEnvironment()
+  EncryptorStaticDataEnvironment(bool shouldPublishData)
     : fw(m_io, m_keyChain)
     , imsFace(static_cast<util::DummyClientFace&>(fw.addFace()))
   {
-    StaticData data;
-    for (const auto& block : data.managerPackets) {
-      auto data = make_shared<Data>(block);
-      m_ims.insert(*data);
+    if (shouldPublishData) {
+      publishData();
     }
 
     auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
@@ -51,6 +49,20 @@ public:
     };
     imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
     advanceClocks(1_ms, 10);
+
+    imsFace.sentData.clear();
+    imsFace.sentInterests.clear();
+  }
+
+  void
+  publishData()
+  {
+    StaticData data;
+    for (const auto& block : data.managerPackets) {
+      auto data = make_shared<Data>(block);
+      m_ims.insert(*data);
+    }
+    advanceClocks(1_ms, 10);
   }
 
 public:
@@ -59,13 +71,17 @@ public:
   InMemoryStoragePersistent m_ims;
 };
 
-class EncryptorFixture : public StaticDataEnvironment
+template<bool shouldPublishData = true>
+class EncryptorFixture : public EncryptorStaticDataEnvironment
 {
 public:
   EncryptorFixture()
-    : face(static_cast<util::DummyClientFace&>(fw.addFace()))
+    : EncryptorStaticDataEnvironment(shouldPublishData)
+    , face(static_cast<util::DummyClientFace&>(fw.addFace()))
     , encryptor("/access/policy/identity/NAC/dataset", "/some/ck/prefix", signingWithSha256(),
-                [] (auto&&...) {},
+                [=] (const ErrorCode& code, const std::string& error) {
+                  onFailure(code, error);
+                },
                 validator, m_keyChain, face)
   {
     advanceClocks(1_ms, 10);
@@ -75,9 +91,10 @@ public:
   util::DummyClientFace& face;
   ValidatorNull validator;
   Encryptor encryptor;
+  util::Signal<EncryptorFixture, ErrorCode, std::string> onFailure;
 };
 
-BOOST_FIXTURE_TEST_SUITE(TestEncryptor, EncryptorFixture)
+BOOST_FIXTURE_TEST_SUITE(TestEncryptor, EncryptorFixture<>)
 
 BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
 {
@@ -118,12 +135,48 @@ BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
   BOOST_CHECK_EQUAL(extractedKek, kek.getName());
 }
 
-BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
+BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)
 {
-  encryptor.regenerateCk([] (auto&&...) {});
+  size_t nErrors = 0;
+  onFailure.connect([&] (const ErrorCode& code, const std::string& error) {
+      ++nErrors;
+    });
+
+  std::string plaintext = "Data to encrypt";
+  auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
   advanceClocks(1_ms, 10);
 
-  encryptor.regenerateCk([] (auto&&...) {});
+  // check that KEK interests has been sent
+  BOOST_CHECK_EQUAL(face.sentInterests.at(0).getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
+
+  // and failed
+  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+
+  advanceClocks(1_s, 13); // 4_s default interest lifetime x 3
+  BOOST_CHECK_EQUAL(nErrors, 1);
+  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+
+  advanceClocks(1_s, 730); // 60 seconds between attempts + ~12 seconds for each attempt
+  BOOST_CHECK_EQUAL(nErrors, 11);
+  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+
+  // check recovery
+
+  publishData();
+
+  advanceClocks(1_s, 73);
+
+  auto kek = imsFace.sentData.at(0);
+  BOOST_CHECK_EQUAL(kek.getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
+  BOOST_CHECK_EQUAL(kek.getName().size(), 7);
+}
+
+BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
+{
+  encryptor.regenerateCk();
+  advanceClocks(1_ms, 10);
+
+  encryptor.regenerateCk();
   advanceClocks(1_ms, 10);
 
   BOOST_CHECK_EQUAL(encryptor.size(), 3);
@@ -157,7 +210,7 @@ BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test ca
       std::cerr << "\"_block\n";
     }
 
-    encryptor.regenerateCk([] (auto&&...) {});
+    encryptor.regenerateCk();
     advanceClocks(1_ms, 10);
   }
   std::cerr  << "  };\n\n";

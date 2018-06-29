@@ -109,6 +109,9 @@ const time::seconds DEFAULT_KEK_FRESHNESS_PERIOD = 1_h;
 const time::seconds DEFAULT_KDK_FRESHNESS_PERIOD = 1_h;
 const time::seconds DEFAULT_CK_FRESHNESS_PERIOD = 1_h;
 
+const time::seconds RETRY_DELAY_AFTER_NACK = 1_s;
+const time::seconds RETRY_DELAY_KEK_RETRIEVAL = 60_s;
+
 enum class ErrorCode {
   KekRetrievalFailure = 1,
   KekRetrievalTimeout = 2,

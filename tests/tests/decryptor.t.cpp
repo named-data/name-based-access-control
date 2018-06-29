@@ -34,10 +34,10 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-class StaticDataEnvironment : public UnitTestTimeFixture
+class DecryptorStaticDataEnvironment : public UnitTestTimeFixture
 {
 public:
-  StaticDataEnvironment()
+  DecryptorStaticDataEnvironment()
     : fw(m_io, m_keyChain)
     , imsFace(static_cast<util::DummyClientFace&>(fw.addFace()))
   {
@@ -75,7 +75,7 @@ public:
 };
 
 template<class T>
-class DecryptorFixture : public StaticDataEnvironment
+class DecryptorFixture : public DecryptorStaticDataEnvironment
 {
 public:
   DecryptorFixture()

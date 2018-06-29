@@ -38,11 +38,13 @@ Encryptor::Encryptor(const Name& accessPrefix,
   , m_ckBits{AES_KEY_SIZE}
   , m_ckDataSigningInfo{std::move(ckDataSigningInfo)}
   , m_isKekRetrievalInProgress(false)
+  , m_onFailure(onFailure)
   , m_ckRegId{nullptr}
   , m_keyChain{keyChain}
   , m_face{face}
+  , m_scheduler{face.getIoService()}
 {
-  regenerateCk(onFailure);
+  regenerateCk();
 
   auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
     auto data = m_ims.find(interest);
@@ -72,31 +74,42 @@ Encryptor::~Encryptor()
 }
 
 void
-Encryptor::regenerateCk(const ErrorCallback& onFailure)
+Encryptor::retryFetchingKek()
+{
+  if (m_isKekRetrievalInProgress) {
+    return;
+  }
+
+  NDN_LOG_DEBUG("Retrying fetching of KEK");
+  m_isKekRetrievalInProgress = true;
+  fetchKekAndPublishCkData([&] {
+      NDN_LOG_DEBUG("KEK retrieved and published");
+      m_isKekRetrievalInProgress = false;
+    },
+    [=] (const ErrorCode& code, const std::string& msg) {
+      NDN_LOG_ERROR("Failed to retrieved KEK: " + msg);
+      m_isKekRetrievalInProgress = false;
+      m_onFailure(code, msg);
+    },
+    N_RETRIES);
+}
+
+void
+Encryptor::regenerateCk()
 {
   m_ckName = m_ckPrefix;
   m_ckName
     .append(CK)
     .appendVersion(); // version = ID of CK
-  random::generateSecureBytes(m_ckBits.data(), m_ckBits.size());
-
   NDN_LOG_DEBUG("Generating new CK: " << m_ckName);
+  random::generateSecureBytes(m_ckBits.data(), m_ckBits.size());
 
   // one implication: if CK updated before KEK fetched, KDK for the old CK will not be published
   if (!m_kek) {
-    m_isKekRetrievalInProgress = true;
-    fetchKekAndPublishCkData([&] {
-        NDN_LOG_DEBUG("KEK retrieved and published");
-        m_isKekRetrievalInProgress = false;
-      },
-      [&] (const ErrorCode&, const std::string& msg) {
-        NDN_LOG_ERROR("Failed to retrieved KEK: " + msg);
-        m_isKekRetrievalInProgress = false;
-      },
-      N_RETRIES);
+    retryFetchingKek();
   }
   else {
-    makeAndPublishCkData(onFailure);
+    makeAndPublishCkData(m_onFailure);
   }
 }
 
@@ -145,9 +158,20 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                            },
                            [=] (const Interest& i, const lp::Nack& nack) {
                              m_kekPendingInterest = nullptr;
-                             onFailure(ErrorCode::KekRetrievalFailure,
-                                       "Retrieval of KEK [" + i.getName().toUri() + "] failed. "
-                                       "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
+                             if (nTriesLeft > 1) {
+                               m_scheduler.scheduleEvent(RETRY_DELAY_AFTER_NACK, [=] {
+                                   fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
+                                 });
+                             }
+                             else {
+                               onFailure(ErrorCode::KekRetrievalFailure,
+                                         "Retrieval of KEK [" + i.getName().toUri() + "] failed. "
+                                         "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
+                               NDN_LOG_DEBUG("Scheduling retry from NACK");
+                               m_scheduler.scheduleEvent(RETRY_DELAY_KEK_RETRIEVAL, [=] {
+                                   retryFetchingKek();
+                                 });
+                             }
                            },
                            [=] (const Interest& i) {
                              m_kekPendingInterest = nullptr;
@@ -157,6 +181,10 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                              else {
                                onFailure(ErrorCode::KekRetrievalTimeout,
                                          "Retrieval of KEK [" + i.getName().toUri() + "] timed out");
+                               NDN_LOG_DEBUG("Scheduling retry after all timeouts");
+                               m_scheduler.scheduleEvent(RETRY_DELAY_KEK_RETRIEVAL, [=] {
+                                   retryFetchingKek();
+                                 });
                              }
                            });
 }
