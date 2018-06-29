@@ -81,6 +81,7 @@ def build(bld):
         bld.recurse('tests')
 
     bld.recurse('tools')
+    bld.recurse('examples')
 
     bld.install_files(
         dest = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
