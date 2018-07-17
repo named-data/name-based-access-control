@@ -29,8 +29,11 @@ def configure(conf):
                    uselib_store='NDN_CXX', mandatory=True)
 
     USED_BOOST_LIBS = ['system', 'thread', 'log', 'log_setup']
+
     if conf.env['WITH_TESTS']:
         USED_BOOST_LIBS += ['unit_test_framework']
+        conf.define('NDN_NAC_HAVE_TESTS', 1)
+
     conf.check_boost(lib=USED_BOOST_LIBS, mandatory=True, mt=True)
 
     conf.check_compiler_flags()

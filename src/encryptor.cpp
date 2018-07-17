@@ -153,7 +153,9 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                              m_kekPendingInterest = nullptr;
                              // @todo verify if the key is legit
                              m_kek = kek;
-                             makeAndPublishCkData(onFailure);
+                             if (makeAndPublishCkData(onFailure)) {
+                               onReady();
+                             }
                              // otherwise, failure has been already declared
                            },
                            [=] (const Interest& i, const lp::Nack& nack) {
@@ -189,7 +191,7 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                            });
 }
 
-void
+bool
 Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
 {
   try {
@@ -207,9 +209,11 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
     m_ims.insert(*ckData);
 
     NDN_LOG_DEBUG("Publishing CK data: " << ckData->getName());
+    return true;
   }
   catch (const std::runtime_error& error) {
     onFailure(ErrorCode::EncryptionFailure, "Failed to encrypt generated CK with KEK " + m_kek->getName().toUri());
+    return false;
   }
 }
 

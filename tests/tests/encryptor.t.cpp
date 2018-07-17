@@ -98,6 +98,11 @@ BOOST_FIXTURE_TEST_SUITE(TestEncryptor, EncryptorFixture<>)
 
 BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
 {
+  encryptor.m_kek.reset();
+  BOOST_CHECK_EQUAL(encryptor.m_isKekRetrievalInProgress, false);
+  encryptor.regenerateCk();
+  BOOST_CHECK_EQUAL(encryptor.m_isKekRetrievalInProgress, true);
+
   std::string plaintext = "Data to encrypt";
   auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
 
@@ -133,6 +138,8 @@ BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
 
   auto extractedKek = ckName.getSubName(6);
   BOOST_CHECK_EQUAL(extractedKek, kek.getName());
+
+  BOOST_CHECK_EQUAL(encryptor.m_isKekRetrievalInProgress, false);
 }
 
 BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)

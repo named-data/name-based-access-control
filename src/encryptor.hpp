@@ -124,10 +124,10 @@ private:
                            const ErrorCallback& onFailure,
                            size_t nTriesLeft);
 
-  void
+  bool
   makeAndPublishCkData(const ErrorCallback& onFailure);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Name m_accessPrefix;
   Name m_ckPrefix;
   Name m_ckName;
