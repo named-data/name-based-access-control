@@ -5,21 +5,25 @@ import os, subprocess
 
 VERSION = '0.1.0'
 APPNAME = 'ndn-nac'
-PACKAGE_BUGREPORT = "http://redmine.named-data.net/projects/nac"
-GIT_TAG_PREFIX = "nac-"
+PACKAGE_BUGREPORT = 'https://redmine.named-data.net/projects/nac'
+GIT_TAG_PREFIX = 'nac-'
 
 def options(opt):
-    opt.load(['compiler_c', 'compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'default-compiler-flags', 'sanitizers', 'coverage', 'sphinx_build', 'doxygen'],
+    opt.load(['compiler_cxx', 'gnu_dirs'])
+    opt.load(['default-compiler-flags', 'boost',
+              'coverage', 'sanitizers',
+              'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
-    opt = opt.add_option_group("NDN-NAC Options")
+    opt = opt.add_option_group('NDN-NAC Options')
 
-    opt.add_option('--with-tests', action='store_true', default=False, dest='with_tests',
-                   help='''Build unit tests''')
+    opt.add_option('--with-tests', action='store_true', default=False,
+                   help='Build unit tests')
 
 def configure(conf):
-    conf.load(['compiler_c', 'compiler_cxx', 'gnu_dirs', 'boost', 'default-compiler-flags', 'sphinx_build', 'doxygen'])
+    conf.load(['compiler_cxx', 'gnu_dirs',
+               'default-compiler-flags', 'boost',
+               'doxygen', 'sphinx_build'])
 
     conf.env['WITH_TESTS'] = conf.options.with_tests
 
@@ -70,13 +74,13 @@ def build(bld):
         VERSION_PATCH=VERSION_SPLIT[2])
 
     bld.shlib(
-        target="ndn-nac",
-        name="libndn-nac",
+        target='ndn-nac',
+        name='libndn-nac',
         vnum=VERSION_BASE,
         cnum=VERSION_BASE,
-        source =  bld.path.ant_glob(['src/**/*.cpp']),
-        use = 'BOOST NDN_CXX',
-        includes = ['src', '.'],
+        source=bld.path.ant_glob('src/**/*.cpp'),
+        use='BOOST NDN_CXX',
+        includes=['src', '.'],
         export_includes=['src', '.'])
 
     # Unit tests
@@ -87,23 +91,23 @@ def build(bld):
     bld.recurse('examples')
 
     bld.install_files(
-        dest = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
+        dest = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
         files = bld.path.ant_glob(['src/**/*.hpp', 'src/**/*.h', 'common.hpp']),
-        cwd = bld.path.find_dir("src"),
+        cwd = bld.path.find_dir('src'),
         relative_trick = True)
 
     bld.install_files(
-        dest = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
+        dest = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
         files = bld.path.get_bld().ant_glob(['src/**/*.hpp', 'common.hpp', 'config.hpp']),
-        cwd = bld.path.get_bld().find_dir("src"),
-        relative_trick = False )
+        cwd = bld.path.get_bld().find_dir('src'),
+        relative_trick = False)
 
-    bld(features = "subst",
+    bld(features='subst',
         source='libndn-nac.pc.in',
         target='libndn-nac.pc',
         install_path = '${LIBDIR}/pkgconfig',
         PREFIX       = bld.env['PREFIX'],
-        INCLUDEDIR   = "%s/ndn-nac" % bld.env['INCLUDEDIR'],
+        INCLUDEDIR   = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
         VERSION      = VERSION)
 
 def docs(bld):
