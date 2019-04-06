@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -127,7 +127,7 @@ private:
   bool
   makeAndPublishCkData(const ErrorCallback& onFailure);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Name m_accessPrefix;
   Name m_ckPrefix;
   Name m_ckName;

@@ -10,51 +10,49 @@ GIT_TAG_PREFIX = 'nac-'
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['default-compiler-flags', 'boost',
-              'coverage', 'sanitizers',
-              'doxygen', 'sphinx_build'],
+    opt.load(['default-compiler-flags', 'coverage', 'sanitizers',
+              'boost', 'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
-    opt = opt.add_option_group('NDN-NAC Options')
-
-    opt.add_option('--with-tests', action='store_true', default=False,
-                   help='Build unit tests')
+    optgrp = opt.add_option_group('NDN-NAC Options')
+    optgrp.add_option('--with-tests', action='store_true', default=False,
+                      help='Build unit tests')
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'boost',
                'doxygen', 'sphinx_build'])
 
-    conf.env['WITH_TESTS'] = conf.options.with_tests
+    conf.env.WITH_EXAMPLES = True
+    conf.env.WITH_TESTS = conf.options.with_tests
 
     if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
-    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
-                   uselib_store='NDN_CXX', mandatory=True)
+    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX')
 
-    USED_BOOST_LIBS = ['system', 'thread', 'log', 'log_setup']
+    boost_libs = ['system', 'program_options']
+    if conf.env.WITH_TESTS:
+        boost_libs.append('unit_test_framework')
 
-    if conf.env['WITH_TESTS']:
-        USED_BOOST_LIBS += ['unit_test_framework']
-        conf.define('NDN_NAC_HAVE_TESTS', 1)
-
-    conf.check_boost(lib=USED_BOOST_LIBS, mandatory=True, mt=True)
+    conf.check_boost(lib=boost_libs, mt=True)
 
     conf.check_compiler_flags()
 
     # Loading "late" to prevent tests from being compiled with profiling flags
     conf.load('coverage')
-
     conf.load('sanitizers')
-
-    conf.define('SYSCONFDIR', conf.env['SYSCONFDIR'])
 
     # If there happens to be a static library, waf will put the corresponding -L flags
     # before dynamic library flags.  This can result in compilation failure when the
-    # system has a different version of the ChronoSync library installed.
-    conf.env['STLIBPATH'] = ['.'] + conf.env['STLIBPATH']
+    # system has a different version of the ndn-nac library installed.
+    conf.env.prepend_value('STLIBPATH', ['.'])
 
-    conf.write_config_header('config.hpp')
+    conf.define_cond('WITH_TESTS', conf.env.WITH_TESTS)
+    # The config header will contain all defines that were added using conf.define()
+    # or conf.define_cond().  Everything that was added directly to conf.env.DEFINES
+    # will not appear in the config header, but will instead be passed directly to the
+    # compiler on the command line.
+    conf.write_config_header('config.hpp', define_prefix='NAC_')
 
 def build(bld):
     version(bld)
@@ -83,12 +81,13 @@ def build(bld):
         includes=['src', '.'],
         export_includes=['src', '.'])
 
-    # Unit tests
-    if bld.env['WITH_TESTS']:
+    bld.recurse('tools')
+
+    if bld.env.WITH_TESTS:
         bld.recurse('tests')
 
-    bld.recurse('tools')
-    bld.recurse('examples')
+    if bld.env.WITH_EXAMPLES:
+        bld.recurse('examples')
 
     bld.install_files(
         dest = '%s/ndn-nac' % bld.env['INCLUDEDIR'],

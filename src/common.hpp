@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2018, Regents of the University of California
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -22,16 +22,16 @@
 
 #include "config.hpp"
 
-#ifdef NDN_NAC_HAVE_TESTS
-#define VIRTUAL_WITH_TESTS virtual
-#define PUBLIC_WITH_TESTS_ELSE_PROTECTED public
-#define PUBLIC_WITH_TESTS_ELSE_PRIVATE public
-#define PROTECTED_WITH_TESTS_ELSE_PRIVATE protected
+#ifdef NAC_WITH_TESTS
+#define NAC_VIRTUAL_WITH_TESTS virtual
+#define NAC_PUBLIC_WITH_TESTS_ELSE_PROTECTED public
+#define NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE public
+#define NAC_PROTECTED_WITH_TESTS_ELSE_PRIVATE protected
 #else
-#define VIRTUAL_WITH_TESTS
-#define PUBLIC_WITH_TESTS_ELSE_PROTECTED protected
-#define PUBLIC_WITH_TESTS_ELSE_PRIVATE private
-#define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
+#define NAC_VIRTUAL_WITH_TESTS
+#define NAC_PUBLIC_WITH_TESTS_ELSE_PROTECTED protected
+#define NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE private
+#define NAC_PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
 #include <cstddef>
