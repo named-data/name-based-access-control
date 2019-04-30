@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -161,18 +161,16 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                            [=] (const Interest& i, const lp::Nack& nack) {
                              m_kekPendingInterest = nullptr;
                              if (nTriesLeft > 1) {
-                               m_scheduler.scheduleEvent(RETRY_DELAY_AFTER_NACK, [=] {
-                                   fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
-                                 });
+                               m_scheduler.schedule(RETRY_DELAY_AFTER_NACK, [=] {
+                                 fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
+                               });
                              }
                              else {
                                onFailure(ErrorCode::KekRetrievalFailure,
                                          "Retrieval of KEK [" + i.getName().toUri() + "] failed. "
                                          "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
                                NDN_LOG_DEBUG("Scheduling retry from NACK");
-                               m_scheduler.scheduleEvent(RETRY_DELAY_KEK_RETRIEVAL, [=] {
-                                   retryFetchingKek();
-                                 });
+                               m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
                              }
                            },
                            [=] (const Interest& i) {
@@ -184,9 +182,7 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                                onFailure(ErrorCode::KekRetrievalTimeout,
                                          "Retrieval of KEK [" + i.getName().toUri() + "] timed out");
                                NDN_LOG_DEBUG("Scheduling retry after all timeouts");
-                               m_scheduler.scheduleEvent(RETRY_DELAY_KEK_RETRIEVAL, [=] {
-                                   retryFetchingKek();
-                                 });
+                               m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
                              }
                            });
 }
