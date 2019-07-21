@@ -39,14 +39,13 @@ Encryptor::Encryptor(const Name& accessPrefix,
   , m_ckDataSigningInfo{std::move(ckDataSigningInfo)}
   , m_isKekRetrievalInProgress(false)
   , m_onFailure(onFailure)
-  , m_ckRegId{nullptr}
   , m_keyChain{keyChain}
   , m_face{face}
   , m_scheduler{face.getIoService()}
 {
   regenerateCk();
 
-  auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+  auto serveFromIms = [this] (const Name&, const Interest& interest) {
     auto data = m_ims.find(interest);
     if (data != nullptr) {
       NDN_LOG_DEBUG("Serving " << data->getName() << " from InMemoryStorage");
@@ -62,15 +61,12 @@ Encryptor::Encryptor(const Name& accessPrefix,
     NDN_LOG_ERROR("Failed to register prefix " << prefix << ": " << msg);
   };
 
-  m_ckRegId = m_face.setInterestFilter(Name(ckPrefix).append(CK), serveFromIms, handleError);
+  m_ckReg = m_face.setInterestFilter(Name(ckPrefix).append(CK), serveFromIms, handleError);
 }
 
 Encryptor::~Encryptor()
 {
-  m_face.unsetInterestFilter(m_ckRegId);
-  if (m_kekPendingInterest != nullptr) {
-    m_face.removePendingInterest(m_kekPendingInterest);
-  }
+  m_kekPendingInterest.cancel();
 }
 
 void
@@ -140,51 +136,46 @@ Encryptor::fetchKekAndPublishCkData(const std::function<void()>& onReady,
                                     const ErrorCallback& onFailure,
                                     size_t nTriesLeft)
 {
-  // interest for <access-prefix>/KEK to retrieve  <access-prefix>/KEK/<key-id> KekData
+  // interest for <access-prefix>/KEK to retrieve <access-prefix>/KEK/<key-id> KekData
 
   NDN_LOG_DEBUG("Fetching KEK " << Name(m_accessPrefix).append(KEK));
 
-  BOOST_ASSERT(m_kekPendingInterest == nullptr);
-  m_kekPendingInterest =
-    m_face.expressInterest(Interest(Name(m_accessPrefix).append(KEK))
-                             .setMustBeFresh(true)
-                             .setCanBePrefix(true),
-                           [=] (const Interest&, const Data& kek) {
-                             m_kekPendingInterest = nullptr;
-                             // @todo verify if the key is legit
-                             m_kek = kek;
-                             if (makeAndPublishCkData(onFailure)) {
-                               onReady();
-                             }
-                             // otherwise, failure has been already declared
-                           },
-                           [=] (const Interest& i, const lp::Nack& nack) {
-                             m_kekPendingInterest = nullptr;
-                             if (nTriesLeft > 1) {
-                               m_scheduler.schedule(RETRY_DELAY_AFTER_NACK, [=] {
-                                 fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
-                               });
-                             }
-                             else {
-                               onFailure(ErrorCode::KekRetrievalFailure,
-                                         "Retrieval of KEK [" + i.getName().toUri() + "] failed. "
-                                         "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
-                               NDN_LOG_DEBUG("Scheduling retry from NACK");
-                               m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
-                             }
-                           },
-                           [=] (const Interest& i) {
-                             m_kekPendingInterest = nullptr;
-                             if (nTriesLeft > 1) {
-                               fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
-                             }
-                             else {
-                               onFailure(ErrorCode::KekRetrievalTimeout,
-                                         "Retrieval of KEK [" + i.getName().toUri() + "] timed out");
-                               NDN_LOG_DEBUG("Scheduling retry after all timeouts");
-                               m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
-                             }
-                           });
+  auto kekInterest = Interest(Name(m_accessPrefix).append(KEK))
+                     .setCanBePrefix(true)
+                     .setMustBeFresh(true);
+  m_kekPendingInterest = m_face.expressInterest(kekInterest,
+    [=] (const Interest&, const Data& kek) {
+      // @todo verify if the key is legit
+      m_kek = kek;
+      if (makeAndPublishCkData(onFailure)) {
+        onReady();
+      }
+      // otherwise, failure has been already declared
+    },
+    [=] (const Interest& i, const lp::Nack& nack) {
+      if (nTriesLeft > 1) {
+        m_scheduler.schedule(RETRY_DELAY_AFTER_NACK, [=] {
+          fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
+        });
+      }
+      else {
+        onFailure(ErrorCode::KekRetrievalFailure, "Retrieval of KEK [" + i.getName().toUri() +
+                  "] failed. Got NACK with reason " + boost::lexical_cast<std::string>(nack.getReason()));
+        NDN_LOG_DEBUG("Scheduling retry from NACK");
+        m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
+      }
+    },
+    [=] (const Interest& i) {
+      if (nTriesLeft > 1) {
+        fetchKekAndPublishCkData(onReady, onFailure, nTriesLeft - 1);
+      }
+      else {
+        onFailure(ErrorCode::KekRetrievalTimeout,
+                  "Retrieval of KEK [" + i.getName().toUri() + "] timed out");
+        NDN_LOG_DEBUG("Scheduling retry after all timeouts");
+        m_scheduler.schedule(RETRY_DELAY_KEK_RETRIEVAL, [this] { retryFetchingKek(); });
+      }
+    });
 }
 
 bool
@@ -207,7 +198,7 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
     NDN_LOG_DEBUG("Publishing CK data: " << ckData->getName());
     return true;
   }
-  catch (const std::runtime_error& error) {
+  catch (const std::runtime_error&) {
     onFailure(ErrorCode::EncryptionFailure, "Failed to encrypt generated CK with KEK " + m_kek->getName().toUri());
     return false;
   }

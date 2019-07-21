@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -52,7 +52,7 @@ AccessManager::AccessManager(const Identity& identity, const Name& dataset,
   // kek looks like a cert, but doesn't have ValidityPeriod
   m_ims.insert(*kek);
 
-  auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+  auto serveFromIms = [this] (const Name&, const Interest& interest) {
     auto data = m_ims.find(interest);
     if (data != nullptr) {
       NDN_LOG_DEBUG("Serving " << data->getName() << " from InMemoryStorage");
@@ -68,16 +68,10 @@ AccessManager::AccessManager(const Identity& identity, const Name& dataset,
     NDN_LOG_ERROR("Failed to register prefix " << prefix << ": " << msg);
   };
 
-  m_kekRegId = m_face.setInterestFilter(kekPrefix, serveFromIms, handleError);
+  m_kekReg = m_face.setInterestFilter(kekPrefix, serveFromIms, handleError);
 
   auto kdkPrefix = Name(m_nacKey.getIdentity()).append(KDK).append(nacKeyId);
-  m_kdkRegId = m_face.setInterestFilter(kdkPrefix, serveFromIms, handleError);
-}
-
-AccessManager::~AccessManager()
-{
-  m_face.unsetInterestFilter(m_kekRegId);
-  m_face.unsetInterestFilter(m_kdkRegId);
+  m_kdkReg = m_face.setInterestFilter(kdkPrefix, serveFromIms, handleError);
 }
 
 Data

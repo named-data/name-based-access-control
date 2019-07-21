@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -70,8 +70,6 @@ public:
   AccessManager(const Identity& identity, const Name& dataset,
                 KeyChain& keyChain, Face& face);
 
-  ~AccessManager();
-
   /**
    * @brief Authorize a member identified by its certificate @p memberCert to decrypt data
    *        under the policy
@@ -131,8 +129,8 @@ private:
   Face& m_face;
 
   InMemoryStoragePersistent m_ims; // for KEK and KDKs
-  const RegisteredPrefixId* m_kekRegId;
-  const RegisteredPrefixId* m_kdkRegId;
+  ScopedRegisteredPrefixHandle m_kekReg;
+  ScopedRegisteredPrefixHandle m_kdkReg;
 };
 
 } // namespace nac

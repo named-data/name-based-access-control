@@ -139,8 +139,8 @@ NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ErrorCallback m_onFailure;
 
   InMemoryStoragePersistent m_ims; // for encrypted CKs
-  const RegisteredPrefixId* m_ckRegId = nullptr;
-  const PendingInterestId* m_kekPendingInterest = nullptr;
+  ScopedRegisteredPrefixHandle m_ckReg;
+  PendingInterestHandle m_kekPendingInterest;
 
   KeyChain& m_keyChain;
   Face& m_face;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2019, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -40,20 +40,20 @@ Decryptor::Decryptor(const Key& credentialsKey, Validator& validator, KeyChain& 
 Decryptor::~Decryptor()
 {
   for (auto& i : m_cks) {
-    if (i.second.pendingInterest != nullptr) {
-      m_face.removePendingInterest(i.second.pendingInterest);
-      i.second.pendingInterest = nullptr;
-
+    if (i.second.pendingInterest) {
+      i.second.pendingInterest->cancel();
       for (const auto& p : i.second.pendingDecrypts) {
-        p.onFailure(ErrorCode::CkRetrievalFailure, "Cancel pending decrypt as ContentKey is being destroyed");
+        p.onFailure(ErrorCode::CkRetrievalFailure,
+                    "Cancel pending decrypt as ContentKey is being destroyed");
       }
-      i.second.pendingDecrypts.clear(); // not really necessary, but just in case
     }
   }
 }
 
 void
-Decryptor::decrypt(const Block& encryptedContent, const DecryptSuccessCallback& onSuccess, const ErrorCallback& onFailure)
+Decryptor::decrypt(const Block& encryptedContent,
+                   const DecryptSuccessCallback& onSuccess,
+                   const ErrorCallback& onFailure)
 {
   EncryptedContent ec(encryptedContent);
   if (!ec.hasKeyLocator()) {
@@ -104,7 +104,7 @@ Decryptor::fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, siz
                                                        .setMustBeFresh(false) // ?
                                                        .setCanBePrefix(true),
     [=] (const Interest& ckInterest, const Data& ckData) {
-      ck->second.pendingInterest = nullptr;
+      ck->second.pendingInterest = nullopt;
       // @TODO verify if the key is legit
       Name kdkPrefix, kdkIdentity, kdkKeyName;
       std::tie(kdkPrefix, kdkIdentity, kdkKeyName) =
@@ -127,13 +127,13 @@ Decryptor::fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, siz
       fetchKdk(ck, kdkPrefix, ckData, onFailure, N_RETRIES);
     },
     [=] (const Interest& i, const lp::Nack& nack) {
-      ck->second.pendingInterest = nullptr;
+      ck->second.pendingInterest = nullopt;
       onFailure(ErrorCode::CkRetrievalFailure,
                 "Retrieval of CK [" + i.getName().toUri() + "] failed. "
                 "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
     },
     [=] (const Interest& i) {
-      ck->second.pendingInterest = nullptr;
+      ck->second.pendingInterest = nullopt;
       if (nTriesLeft > 1) {
         fetchCk(ck, onFailure, nTriesLeft - 1);
       }
@@ -164,8 +164,8 @@ Decryptor::fetchKdk(ContentKeys::iterator ck, const Name& kdkPrefix, const Data&
   ck->second.pendingInterest = m_face.expressInterest(Interest(kdkName)
                                                      .setMustBeFresh(true)
                                                      .setCanBePrefix(false),
-    [=] (const Interest& ckInterest, const Data& kdkData) {
-      ck->second.pendingInterest = nullptr;
+    [=] (const Interest&, const Data& kdkData) {
+      ck->second.pendingInterest = nullopt;
       // @TODO verify if the key is legit
 
       bool isOk = decryptAndImportKdk(kdkData, onFailure);
@@ -176,13 +176,13 @@ Decryptor::fetchKdk(ContentKeys::iterator ck, const Name& kdkPrefix, const Data&
                                          onFailure);
     },
     [=] (const Interest& i, const lp::Nack& nack) {
-      ck->second.pendingInterest = nullptr;
+      ck->second.pendingInterest = nullopt;
       onFailure(ErrorCode::KdkRetrievalFailure,
                 "Retrieval of KDK [" + i.getName().toUri() + "] failed. "
                 "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
     },
     [=] (const Interest& i) {
-      ck->second.pendingInterest = nullptr;
+      ck->second.pendingInterest = nullopt;
       if (nTriesLeft > 1) {
         fetchKdk(ck, kdkPrefix, ckData, onFailure, nTriesLeft - 1);
       }
