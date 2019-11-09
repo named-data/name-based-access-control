@@ -26,9 +26,8 @@ def configure(conf):
     conf.env.WITH_EXAMPLES = True
     conf.env.WITH_TESTS = conf.options.with_tests
 
-    if 'PKG_CONFIG_PATH' not in os.environ:
-        os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
-    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX')
+    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX',
+                   pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
     boost_libs = ['system', 'program_options']
     if conf.env.WITH_TESTS:
@@ -90,24 +89,22 @@ def build(bld):
         bld.recurse('examples')
 
     bld.install_files(
-        dest = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
-        files = bld.path.ant_glob(['src/**/*.hpp', 'src/**/*.h', 'common.hpp']),
+        dest = '%s/ndn-nac' % bld.env.INCLUDEDIR,
+        files = bld.path.ant_glob(['src/*.hpp', 'common.hpp']),
         cwd = bld.path.find_dir('src'),
-        relative_trick = True)
+        relative_trick = False)
 
     bld.install_files(
-        dest = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
-        files = bld.path.get_bld().ant_glob(['src/**/*.hpp', 'common.hpp', 'config.hpp']),
+        dest = '%s/ndn-nac' % bld.env.INCLUDEDIR,
+        files = bld.path.get_bld().ant_glob(['src/*.hpp', 'common.hpp', 'config.hpp']),
         cwd = bld.path.get_bld().find_dir('src'),
         relative_trick = False)
 
     bld(features='subst',
         source='libndn-nac.pc.in',
         target='libndn-nac.pc',
-        install_path = '${LIBDIR}/pkgconfig',
-        PREFIX       = bld.env['PREFIX'],
-        INCLUDEDIR   = '%s/ndn-nac' % bld.env['INCLUDEDIR'],
-        VERSION      = VERSION)
+        install_path='${LIBDIR}/pkgconfig',
+        VERSION=VERSION)
 
 def docs(bld):
     from waflib import Options
