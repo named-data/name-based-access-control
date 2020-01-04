@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -17,15 +17,11 @@
  * See AUTHORS.md for complete list of NAC library authors and contributors.
  */
 
-#include "tests-common.hpp"
+#include "unit-test-common-fixtures.hpp"
 
 namespace ndn {
 namespace nac {
 namespace tests {
-
-BaseFixture::BaseFixture()
-{
-}
 
 UnitTestTimeFixture::UnitTestTimeFixture()
   : steadyClock(make_shared<time::UnitTestSteadyClock>())

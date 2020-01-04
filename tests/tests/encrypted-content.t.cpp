@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * This file is part of NAC (Name-Based Access Control for NDN).
  * See AUTHORS.md for complete list of NAC authors and contributors.
@@ -19,9 +19,7 @@
 
 #include "encrypted-content.hpp"
 
-#include "tests-common.hpp"
-
-#include <iostream>
+#include "boost-test.hpp"
 
 namespace ndn {
 namespace nac {

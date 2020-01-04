@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -17,9 +17,7 @@
  * See AUTHORS.md for complete list of NAC library authors and contributors.
  */
 
-#define BOOST_TEST_MODULE NAC Tests
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_ALTERNATIVE_INIT_API
+#define BOOST_TEST_MODULE NAC Unit Tests
 
 #include <boost/version.hpp>
 
@@ -27,9 +25,9 @@
 // Boost.Test v3.3 (Boost 1.62) natively supports multi-logger output
 #include "boost-test.hpp"
 #else
+#define BOOST_TEST_ALTERNATIVE_INIT_API
 #define BOOST_TEST_NO_MAIN
 #include "boost-test.hpp"
-
 #include "boost-multi-log-formatter.hpp"
 
 #include <boost/program_options/options_description.hpp>

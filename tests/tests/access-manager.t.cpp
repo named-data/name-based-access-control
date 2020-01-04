@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -19,8 +19,9 @@
 
 #include "access-manager.hpp"
 
-#include "tests-common.hpp"
+#include "boost-test.hpp"
 #include "dummy-forwarder.hpp"
+#include "unit-test-common-fixtures.hpp"
 
 #include <iostream>
 #include <ndn-cxx/util/string-helper.hpp>

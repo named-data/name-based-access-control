@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,10 +20,10 @@
 #ifndef NAC_TESTS_UNIT_TEST_COMMON_FIXTURES_HPP
 #define NAC_TESTS_UNIT_TEST_COMMON_FIXTURES_HPP
 
-#include "boost-test.hpp"
 #include "identity-management-fixture.hpp"
 
-#include <boost/asio.hpp>
+#include <boost/asio/io_service.hpp>
+
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
 
 namespace ndn {
@@ -38,10 +38,10 @@ namespace tests {
 class BaseFixture : public IdentityManagementFixture
 {
 protected:
-  BaseFixture();
+  BaseFixture() = default;
 
 protected:
-  /** \brief reference to global io_service
+  /** \brief global io_service
    */
   boost::asio::io_service m_io;
 };
@@ -81,8 +81,6 @@ protected:
 protected:
   shared_ptr<time::UnitTestSteadyClock> steadyClock;
   shared_ptr<time::UnitTestSystemClock> systemClock;
-
-  friend class LimitedIo;
 };
 
 } // namespace tests
