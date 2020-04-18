@@ -1922,7 +1922,7 @@ PREDEFINED             = DOXYGEN \
                          NAC_PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
                          NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \
                          NAC_PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
-                         NAC_VIRTUAL_WITH_TESTS
+                         NAC_VIRTUAL_WITH_TESTS=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
@@ -1966,7 +1966,7 @@ TAGFILES               =
 # tag file that is based on the input files it reads. See section "Linking to
 # external documentation" for more information about the usage of tag files.
 
-GENERATE_TAGFILE       = ndn-cxx.tag
+GENERATE_TAGFILE       = nac.tag
 
 # If the ALLEXTERNALS tag is set to YES all external class will be listed in the
 # class index. If set to NO only the inherited external classes will be listed.
