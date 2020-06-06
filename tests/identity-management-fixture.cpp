@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2018, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,15 +20,13 @@
 #include "identity-management-fixture.hpp"
 
 #include <ndn-cxx/util/io.hpp>
-#include <ndn-cxx/security/v2/additional-description.hpp>
+#include <ndn-cxx/security/additional-description.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace ndn {
 namespace nac {
 namespace tests {
-
-namespace v2 = security::v2;
 
 IdentityManagementFixture::IdentityManagementFixture()
   : m_keyChain("pib-memory:", "tpm-memory:")
@@ -43,7 +41,7 @@ IdentityManagementFixture::~IdentityManagementFixture()
   }
 }
 
-security::Identity
+Identity
 IdentityManagementFixture::addIdentity(const Name& identityName, const KeyParams& params)
 {
   auto identity = m_keyChain.createIdentity(identityName, params);
@@ -52,7 +50,7 @@ IdentityManagementFixture::addIdentity(const Name& identityName, const KeyParams
 }
 
 bool
-IdentityManagementFixture::saveIdentityCertificate(const security::Identity& identity,
+IdentityManagementFixture::saveIdentityCertificate(const Identity& identity,
                                                    const std::string& filename)
 {
   try {
@@ -64,13 +62,13 @@ IdentityManagementFixture::saveIdentityCertificate(const security::Identity& ide
   }
 }
 
-security::Identity
+Identity
 IdentityManagementFixture::addSubCertificate(const Name& subIdentityName,
-                                             const security::Identity& issuer, const KeyParams& params)
+                                             const Identity& issuer, const KeyParams& params)
 {
   auto subIdentity = addIdentity(subIdentityName, params);
 
-  v2::Certificate request = subIdentity.getDefaultKey().getDefaultCertificate();
+  Certificate request = subIdentity.getDefaultKey().getDefaultCertificate();
 
   request.setName(request.getKeyName().append("parent").appendVersion());
 
@@ -78,7 +76,7 @@ IdentityManagementFixture::addSubCertificate(const Name& subIdentityName,
   info.setValidityPeriod(security::ValidityPeriod(time::system_clock::now(),
                                                   time::system_clock::now() + time::days(7300)));
 
-  v2::AdditionalDescription description;
+  security::AdditionalDescription description;
   description.set("type", "sub-certificate");
   info.appendTypeSpecificTlv(description.wireEncode());
 
@@ -88,14 +86,14 @@ IdentityManagementFixture::addSubCertificate(const Name& subIdentityName,
   return subIdentity;
 }
 
-v2::Certificate
+Certificate
 IdentityManagementFixture::addCertificate(const security::Key& key, const std::string& issuer)
 {
   Name certificateName = key.getName();
   certificateName
     .append(issuer)
     .appendVersion();
-  v2::Certificate certificate;
+  Certificate certificate;
   certificate.setName(certificateName);
 
   // set metainfo

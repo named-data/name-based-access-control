@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2018, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -44,14 +44,14 @@ nac_dump_kek(int argc, char** argv);
 int
 nac_add_member(int argc, char** argv);
 
-inline security::v2::Certificate
+inline Certificate
 loadCertificate(const std::string& fileName)
 {
-  shared_ptr<security::v2::Certificate> cert;
+  shared_ptr<Certificate> cert;
   if (fileName == "-")
-    cert = io::load<security::v2::Certificate>(std::cin);
+    cert = io::load<Certificate>(std::cin);
   else
-    cert = io::load<security::v2::Certificate>(fileName);
+    cert = io::load<Certificate>(fileName);
 
   if (cert == nullptr) {
     BOOST_THROW_EXCEPTION(std::runtime_error("Cannot load certificate from " + fileName));

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -49,16 +49,16 @@
 #include <ndn-cxx/ims/in-memory-storage-persistent.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/link.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/security/transform/block-cipher.hpp>
 #include <ndn-cxx/security/transform/buffer-source.hpp>
 #include <ndn-cxx/security/transform/public-key.hpp>
 #include <ndn-cxx/security/transform/stream-sink.hpp>
-#include <ndn-cxx/security/v2/key-chain.hpp>
-#include <ndn-cxx/security/v2/validation-callback.hpp>
-#include <ndn-cxx/security/v2/validation-error.hpp>
-#include <ndn-cxx/security/v2/validator.hpp>
+#include <ndn-cxx/security/validation-callback.hpp>
+#include <ndn-cxx/security/validation-error.hpp>
 #include <ndn-cxx/security/validator-null.hpp>
+#include <ndn-cxx/security/validator.hpp>
 #include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
@@ -71,18 +71,18 @@
 namespace ndn {
 namespace nac {
 
+using security::Certificate;
+using security::DataValidationFailureCallback;
+using security::DataValidationSuccessCallback;
 using security::Identity;
 using security::Key;
-using security::SigningInfo;
 using security::SafeBag;
+using security::SigningInfo;
+using security::ValidationError;
+using security::Validator;
 using security::ValidatorNull;
+using security::extractKeyNameFromCertName;
 using security::transform::PublicKey;
-using security::v2::Certificate;
-using security::v2::DataValidationFailureCallback;
-using security::v2::DataValidationSuccessCallback;
-using security::v2::ValidationError;
-using security::v2::Validator;
-using security::v2::extractKeyNameFromCertName;
 
 namespace tlv {
 using namespace ndn::tlv;
