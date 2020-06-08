@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -70,9 +70,9 @@ public:
   setPayload(ConstBufferPtr payload);
 
   bool
-  hasIv() const
+  hasIv() const noexcept
   {
-    return !m_iv.empty();
+    return m_iv.isValid();
   }
 
   const Block&
@@ -91,9 +91,9 @@ public:
   setIv(ConstBufferPtr iv);
 
   bool
-  hasPayloadKey() const
+  hasPayloadKey() const noexcept
   {
-    return !m_payloadKey.empty();
+    return m_payloadKey.isValid();
   }
 
   const Block&

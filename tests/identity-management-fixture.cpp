@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
@@ -78,7 +78,7 @@ IdentityManagementFixture::addSubCertificate(const Name& subIdentityName,
 
   security::AdditionalDescription description;
   description.set("type", "sub-certificate");
-  info.appendTypeSpecificTlv(description.wireEncode());
+  info.addCustomTlv(description.wireEncode());
 
   m_keyChain.sign(request, signingByIdentity(issuer).setSignatureInfo(info));
   m_keyChain.setDefaultCertificate(subIdentity.getDefaultKey(), request);

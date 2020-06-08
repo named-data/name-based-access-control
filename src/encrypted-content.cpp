@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -137,19 +137,19 @@ EncryptedContent::wireEncode(EncodingImpl<TAG>& block) const
 {
   size_t totalLength = 0;
 
-  if (!m_keyLocator.empty()) {
+  if (hasKeyLocator()) {
     totalLength += m_keyLocator.wireEncode(block);
   }
 
-  if (!m_payloadKey.empty()) {
+  if (hasPayloadKey()) {
     totalLength += block.prependBlock(m_payloadKey);
   }
 
-  if (!m_iv.empty()) {
+  if (hasIv()) {
     totalLength += block.prependBlock(m_iv);
   }
 
-  if (!m_payload.empty()) {
+  if (m_payload.isValid()) {
     totalLength += block.prependBlock(m_payload);
   }
   else {
@@ -223,7 +223,7 @@ EncryptedContent::wireDecode(const Block& wire)
 bool
 EncryptedContent::operator==(const EncryptedContent& rhs) const
 {
-  return (wireEncode() == rhs.wireEncode());
+  return wireEncode() == rhs.wireEncode();
 }
 
 } // namespace nac
