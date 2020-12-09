@@ -19,9 +19,9 @@
 
 #include "access-manager.hpp"
 
-#include "boost-test.hpp"
-#include "dummy-forwarder.hpp"
-#include "unit-test-common-fixtures.hpp"
+#include "tests/boost-test.hpp"
+#include "tests/dummy-forwarder.hpp"
+#include "tests/io-key-chain-fixture.hpp"
 
 #include <iostream>
 #include <ndn-cxx/util/string-helper.hpp>
@@ -30,16 +30,17 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-class AccessManagerFixture : public UnitTestTimeFixture
+class AccessManagerFixture : public IoKeyChainFixture
 {
 public:
   AccessManagerFixture()
     : fw(m_io, m_keyChain)
     , face(static_cast<util::DummyClientFace&>(fw.addFace()))
-    , accessIdentity(addIdentity("/access/policy/identity"))
-    , nacIdentity(addIdentity("/access/policy/identity/NAC/dataset", RsaKeyParams())) // hack to get access to KEK key-id
-    , userIdentities{addIdentity("/first/user", RsaKeyParams()),
-                     addIdentity("/second/user", RsaKeyParams())}
+    , accessIdentity(m_keyChain.createIdentity("/access/policy/identity"))
+    , nacIdentity(m_keyChain.createIdentity("/access/policy/identity/NAC/dataset", // hack to get access to KEK key-id
+                                            RsaKeyParams()))
+    , userIdentities{m_keyChain.createIdentity("/first/user", RsaKeyParams()),
+                     m_keyChain.createIdentity("/second/user", RsaKeyParams())}
     , manager(accessIdentity, Name("/dataset"), m_keyChain, face)
   {
     advanceClocks(1_ms, 10);
@@ -113,44 +114,29 @@ BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test ca
     return;
   }
 
-  std::cerr << "Block nacIdentity = \"";
+  std::cerr << "const Block nacIdentity = \"";
   auto block = m_keyChain.exportSafeBag(nacIdentity.getDefaultKey().getDefaultCertificate(),
                                         "password", strlen("password"))->wireEncode();
   printHex(std::cerr, block.wire(), block.size(), true);
   std::cerr << "\"_block;\n\n";
 
-  std::cerr << "std::vector<Block> userIdentities = {\n";
-  for (size_t i = 0; i < userIdentities.size(); ++i) {
-    std::cerr << "    \"";
-
-    block = m_keyChain.exportSafeBag(userIdentities[i].getDefaultKey().getDefaultCertificate(),
+  std::cerr << "const std::vector<Block> userIdentities = {\n";
+  for (const auto& userId : userIdentities) {
+    std::cerr << "  \"";
+    block = m_keyChain.exportSafeBag(userId.getDefaultKey().getDefaultCertificate(),
                                      "password", strlen("password"))->wireEncode();
     printHex(std::cerr, block.wire(), block.size(), true);
-    if (i < userIdentities.size() - 1) {
-      std::cerr << "\"_block,\n";
-    }
-    else {
-      std::cerr << "\"_block\n";
-    }
+    std::cerr << "\"_block,\n";
   }
-  std::cerr  << "  };\n\n";
+  std::cerr << "};\n\n";
 
-  std::cerr << "std::vector<Block> managerPackets = {\n";
-  size_t i = 0;
+  std::cerr << "const std::vector<Block> managerPackets = {\n";
   for (const auto& data : manager) {
-    std::cerr << "    \"";
+    std::cerr << "  \"";
     printHex(std::cerr, data.wireEncode().wire(), data.wireEncode().size(), true);
-
-    if (i < manager.size() - 1) {
-      std::cerr << "\"_block,\n";
-    }
-    else {
-      std::cerr << "\"_block\n";
-    }
-
-    ++i;
+    std::cerr << "\"_block,\n";
   }
-  std::cerr  << "  };\n\n";
+  std::cerr << "};\n\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

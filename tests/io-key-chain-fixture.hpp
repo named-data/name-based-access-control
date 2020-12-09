@@ -17,5 +17,40 @@
  * See AUTHORS.md for complete list of NAC library authors and contributors.
  */
 
-#define BOOST_TEST_MODULE NAC
-#include "tests/boost-test.hpp"
+#ifndef NAC_TESTS_IO_KEY_CHAIN_FIXTURE_HPP
+#define NAC_TESTS_IO_KEY_CHAIN_FIXTURE_HPP
+
+#include "tests/clock-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
+
+#include <boost/asio/io_service.hpp>
+
+namespace ndn {
+namespace nac {
+namespace tests {
+
+class IoKeyChainFixture : public ClockFixture, public KeyChainFixture
+{
+private:
+  void
+  afterTick() final
+  {
+    if (m_io.stopped()) {
+#if BOOST_VERSION >= 106600
+      m_io.restart();
+#else
+      m_io.reset();
+#endif
+    }
+    m_io.poll();
+  }
+
+protected:
+  boost::asio::io_service m_io;
+};
+
+} // namespace tests
+} // namespace nac
+} // namespace ndn
+
+#endif // NAC_TESTS_IO_KEY_CHAIN_FIXTURE_HPP

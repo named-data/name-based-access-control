@@ -23,10 +23,10 @@
 #include "encrypted-content.hpp"
 #include "access-manager.hpp"
 
-#include "boost-test.hpp"
-#include "dummy-forwarder.hpp"
-#include "static-data.hpp"
-#include "unit-test-common-fixtures.hpp"
+#include "tests/boost-test.hpp"
+#include "tests/dummy-forwarder.hpp"
+#include "tests/io-key-chain-fixture.hpp"
+#include "tests/unit/static-data.hpp"
 
 #include <iostream>
 #include <boost/mpl/vector.hpp>
@@ -35,7 +35,7 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-class DecryptorStaticDataEnvironment : public UnitTestTimeFixture
+class DecryptorStaticDataEnvironment : public IoKeyChainFixture
 {
 public:
   DecryptorStaticDataEnvironment()
@@ -44,13 +44,11 @@ public:
   {
     StaticData data;
     for (const auto& block : data.managerPackets) {
-      auto data = make_shared<Data>(block);
-      m_ims.insert(*data);
+      m_ims.insert(*make_shared<Data>(block));
     }
 
     for (const auto& block : data.encryptorPackets) {
-      auto data = make_shared<Data>(block);
-      m_ims.insert(*data);
+      m_ims.insert(*make_shared<Data>(block));
     }
 
     auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
@@ -66,7 +64,7 @@ public:
     m_keyChain.importSafeBag(SafeBag(data.userIdentities.at(0)), "password", strlen("password"));
     // credentialIdentity = m_keyChain.getPib().getIdentity("/first/user");
 
-    addIdentity("/not/authorized");
+    m_keyChain.createIdentity("/not/authorized");
   }
 
 public:

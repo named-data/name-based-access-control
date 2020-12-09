@@ -17,52 +17,37 @@
  * See AUTHORS.md for complete list of NAC library authors and contributors.
  */
 
-#include "unit-test-common-fixtures.hpp"
+#include "tests/clock-fixture.hpp"
 
 namespace ndn {
 namespace nac {
 namespace tests {
 
-UnitTestTimeFixture::UnitTestTimeFixture()
-  : steadyClock(make_shared<time::UnitTestSteadyClock>())
-  , systemClock(make_shared<time::UnitTestSystemClock>())
+ClockFixture::ClockFixture()
+  : m_steadyClock(make_shared<time::UnitTestSteadyClock>())
+  , m_systemClock(make_shared<time::UnitTestSystemClock>())
 {
-  time::setCustomClocks(steadyClock, systemClock);
+  time::setCustomClocks(m_steadyClock, m_systemClock);
 }
 
-UnitTestTimeFixture::~UnitTestTimeFixture()
+ClockFixture::~ClockFixture()
 {
   time::setCustomClocks(nullptr, nullptr);
 }
 
 void
-UnitTestTimeFixture::advanceClocks(const time::nanoseconds& tick, size_t nTicks)
-{
-  this->advanceClocks(tick, tick * nTicks);
-}
-
-void
-UnitTestTimeFixture::advanceClocks(const time::nanoseconds& tick, const time::nanoseconds& total)
+ClockFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
 {
   BOOST_ASSERT(tick > time::nanoseconds::zero());
   BOOST_ASSERT(total >= time::nanoseconds::zero());
 
-  time::nanoseconds remaining = total;
-  while (remaining > time::nanoseconds::zero()) {
-    if (remaining >= tick) {
-      steadyClock->advance(tick);
-      systemClock->advance(tick);
-      remaining -= tick;
-    }
-    else {
-      steadyClock->advance(remaining);
-      systemClock->advance(remaining);
-      remaining = time::nanoseconds::zero();
-    }
+  while (total > time::nanoseconds::zero()) {
+    auto t = std::min(tick, total);
+    m_steadyClock->advance(t);
+    m_systemClock->advance(t);
+    total -= t;
 
-    if (m_io.stopped())
-      m_io.reset();
-    m_io.poll();
+    afterTick();
   }
 }
 

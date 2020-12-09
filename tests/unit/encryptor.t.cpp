@@ -19,10 +19,10 @@
 
 #include "encryptor.hpp"
 
-#include "boost-test.hpp"
-#include "dummy-forwarder.hpp"
-#include "static-data.hpp"
-#include "unit-test-common-fixtures.hpp"
+#include "tests/boost-test.hpp"
+#include "tests/dummy-forwarder.hpp"
+#include "tests/io-key-chain-fixture.hpp"
+#include "tests/unit/static-data.hpp"
 
 #include <iostream>
 #include <ndn-cxx/util/string-helper.hpp>
@@ -31,7 +31,7 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-class EncryptorStaticDataEnvironment : public UnitTestTimeFixture
+class EncryptorStaticDataEnvironment : public IoKeyChainFixture
 {
 public:
   EncryptorStaticDataEnvironment(bool shouldPublishData)
@@ -42,7 +42,7 @@ public:
       publishData();
     }
 
-    auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+    auto serveFromIms = [this] (const Name&, const Interest& interest) {
       auto data = m_ims.find(interest);
       if (data != nullptr) {
         imsFace.put(*data);
@@ -60,8 +60,7 @@ public:
   {
     StaticData data;
     for (const auto& block : data.managerPackets) {
-      auto data = make_shared<Data>(block);
-      m_ims.insert(*data);
+      m_ims.insert(*make_shared<Data>(block));
     }
     advanceClocks(1_ms, 10);
   }
@@ -146,9 +145,7 @@ BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
 BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)
 {
   size_t nErrors = 0;
-  onFailure.connect([&] (const ErrorCode& code, const std::string& error) {
-      ++nErrors;
-    });
+  onFailure.connect([&] (auto&&...) { ++nErrors; });
 
   std::string plaintext = "Data to encrypt";
   auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
@@ -204,41 +201,27 @@ BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test ca
     return;
   }
 
-  std::string plaintext = "Data to encrypt";
+  const auto plaintext = "Data to encrypt"s;
 
-  std::cerr << "std::vector<Block> encryptedBlobs = {\n";
+  std::cerr << "const std::vector<Block> encryptedBlobs = {\n";
   for (size_t i = 0; i < 3; ++i) {
-    std::cerr << "    \"";
+    std::cerr << "  \"";
     auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
     printHex(std::cerr, block.wireEncode().wire(), block.wireEncode().size(), true);
-    if (i < 2) {
-      std::cerr << "\"_block,\n";
-    }
-    else {
-      std::cerr << "\"_block\n";
-    }
+    std::cerr << "\"_block,\n";
 
     encryptor.regenerateCk();
     advanceClocks(1_ms, 10);
   }
-  std::cerr  << "  };\n\n";
+  std::cerr << "};\n\n";
 
-  std::cerr << "std::vector<Block> encryptorPackets = {\n";
-  size_t i = 0;
+  std::cerr << "const std::vector<Block> encryptorPackets = {\n";
   for (const auto& data : encryptor) {
-    std::cerr << "    \"";
+    std::cerr << "  \"";
     printHex(std::cerr, data.wireEncode().wire(), data.wireEncode().size(), true);
-
-    if (i < encryptor.size() - 1) {
-      std::cerr << "\"_block,\n";
-    }
-    else {
-      std::cerr << "\"_block\n";
-    }
-
-    ++i;
+    std::cerr << "\"_block,\n";
   }
-  std::cerr  << "  };\n\n";
+  std::cerr << "};\n\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

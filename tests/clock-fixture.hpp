@@ -17,12 +17,8 @@
  * See AUTHORS.md for complete list of NAC library authors and contributors.
  */
 
-#ifndef NAC_TESTS_UNIT_TEST_COMMON_FIXTURES_HPP
-#define NAC_TESTS_UNIT_TEST_COMMON_FIXTURES_HPP
-
-#include "identity-management-fixture.hpp"
-
-#include <boost/asio/io_service.hpp>
+#ifndef NAC_TESTS_CLOCK_FIXTURE_HPP
+#define NAC_TESTS_CLOCK_FIXTURE_HPP
 
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
 
@@ -30,61 +26,60 @@ namespace ndn {
 namespace nac {
 namespace tests {
 
-/** \brief base test fixture
- *
- *  Every test case should be based on this fixture,
- *  to have per test case io_service initialization.
+/** \brief A test fixture that overrides steady clock and system clock.
  */
-class BaseFixture : public IdentityManagementFixture
+class ClockFixture
 {
-protected:
-  BaseFixture() = default;
+public:
+  virtual
+  ~ClockFixture();
 
-protected:
-  /** \brief global io_service
-   */
-  boost::asio::io_service m_io;
-};
-
-/** \brief a base test fixture that overrides steady clock and system clock
- */
-class UnitTestTimeFixture : public BaseFixture
-{
-protected:
-  UnitTestTimeFixture();
-
-  ~UnitTestTimeFixture();
-
-  /** \brief advance steady and system clocks
+  /** \brief Advance steady and system clocks.
    *
    *  Clocks are advanced in increments of \p tick for \p nTicks ticks.
-   *  After each tick, global io_service is polled to process pending I/O events.
+   *  afterTick() is called after each tick.
    *
    *  Exceptions thrown during I/O events are propagated to the caller.
-   *  Clock advancing would stop in case of an exception.
+   *  Clock advancement will stop in the event of an exception.
    */
   void
-  advanceClocks(const time::nanoseconds& tick, size_t nTicks = 1);
+  advanceClocks(time::nanoseconds tick, size_t nTicks = 1)
+  {
+    advanceClocks(tick, tick * nTicks);
+  }
 
-  /** \brief advance steady and system clocks
+  /** \brief Advance steady and system clocks.
    *
    *  Clocks are advanced in increments of \p tick for \p total time.
    *  The last increment might be shorter than \p tick.
-   *  After each tick, global io_service is polled to process pending I/O events.
+   *  afterTick() is called after each tick.
    *
    *  Exceptions thrown during I/O events are propagated to the caller.
-   *  Clock advancing would stop in case of an exception.
+   *  Clock advancement will stop in the event of an exception.
    */
   void
-  advanceClocks(const time::nanoseconds& tick, const time::nanoseconds& total);
+  advanceClocks(time::nanoseconds tick, time::nanoseconds total);
 
 protected:
-  shared_ptr<time::UnitTestSteadyClock> steadyClock;
-  shared_ptr<time::UnitTestSystemClock> systemClock;
+  ClockFixture();
+
+private:
+  /** \brief Called by advanceClocks() after each clock advancement (tick).
+   *
+   *  The base class implementation is a no-op.
+   */
+  virtual void
+  afterTick()
+  {
+  }
+
+protected:
+  shared_ptr<time::UnitTestSteadyClock> m_steadyClock;
+  shared_ptr<time::UnitTestSystemClock> m_systemClock;
 };
 
 } // namespace tests
 } // namespace nac
 } // namespace ndn
 
-#endif // NAC_TESTS_UNIT_TEST_COMMON_FIXTURES_HPP
+#endif // NAC_TESTS_CLOCK_FIXTURE_HPP

@@ -3,13 +3,9 @@
 top = '..'
 
 def build(bld):
-    config_path = 'TMP_TESTS_PATH="%s"' % bld.bldnode.make_node('tmp-files')
-
     bld.program(
         target='../unit-tests',
         name='unit-tests',
         source=bld.path.ant_glob('**/*.cpp'),
         use='libndn-nac',
-        includes='.',
-        install_path=None,
-        defines=[config_path])
+        install_path=None)

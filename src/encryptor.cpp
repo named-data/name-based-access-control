@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -32,16 +32,16 @@ const size_t N_RETRIES = 3;
 Encryptor::Encryptor(const Name& accessPrefix,
                      const Name& ckPrefix, SigningInfo ckDataSigningInfo,
                      const ErrorCallback& onFailure,
-                     Validator& validator, KeyChain& keyChain, Face& face)
-  : m_accessPrefix{accessPrefix}
-  , m_ckPrefix{ckPrefix}
-  , m_ckBits{AES_KEY_SIZE}
-  , m_ckDataSigningInfo{std::move(ckDataSigningInfo)}
+                     Validator&, KeyChain& keyChain, Face& face)
+  : m_accessPrefix(accessPrefix)
+  , m_ckPrefix(ckPrefix)
+  , m_ckBits(AES_KEY_SIZE)
+  , m_ckDataSigningInfo(std::move(ckDataSigningInfo))
   , m_isKekRetrievalInProgress(false)
   , m_onFailure(onFailure)
-  , m_keyChain{keyChain}
-  , m_face{face}
-  , m_scheduler{face.getIoService()}
+  , m_keyChain(keyChain)
+  , m_face(face)
+  , m_scheduler(face.getIoService())
 {
   regenerateCk();
 
@@ -199,7 +199,8 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
     return true;
   }
   catch (const std::runtime_error&) {
-    onFailure(ErrorCode::EncryptionFailure, "Failed to encrypt generated CK with KEK " + m_kek->getName().toUri());
+    onFailure(ErrorCode::EncryptionFailure,
+              "Failed to encrypt generated CK with KEK " + m_kek->getName().toUri());
     return false;
   }
 }

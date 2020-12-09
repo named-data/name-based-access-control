@@ -19,7 +19,7 @@
 
 #include "encrypted-content.hpp"
 
-#include "boost-test.hpp"
+#include "tests/boost-test.hpp"
 
 namespace ndn {
 namespace nac {
@@ -30,14 +30,14 @@ class EncryptedContentFixture
 public:
   EncryptedContentFixture()
   {
-    BOOST_CHECK_EQUAL(randomBlock.value_size(), 3);
-    BOOST_CHECK_EQUAL(randomBuffer->size(), 10);
+    BOOST_ASSERT(randomBlock.value_size() == 3);
+    BOOST_ASSERT(randomBuffer->size() == 10);
   }
 
 public:
   EncryptedContent content;
   Block randomBlock = "01 03 000000"_block;
-  ConstBufferPtr randomBuffer = make_shared<Buffer>(10);
+  ConstBufferPtr randomBuffer = make_shared<const Buffer>(10);
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestEncryptedContent, EncryptedContentFixture)
