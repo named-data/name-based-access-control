@@ -195,12 +195,10 @@ BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
   BOOST_CHECK_EQUAL(nCk, 3);
 }
 
-BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test cases
+BOOST_AUTO_TEST_CASE(GenerateTestData,
+  * ut::description("regenerates the static test data used by other test cases")
+  * ut::disabled())
 {
-  if (std::getenv("NAC_DUMP_PACKETS") == nullptr) {
-    return;
-  }
-
   const auto plaintext = "Data to encrypt"s;
 
   std::cerr << "const std::vector<Block> encryptedBlobs = {\n";

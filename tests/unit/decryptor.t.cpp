@@ -116,10 +116,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(DecryptSuccess, T, Identities, DecryptorFixture
                     [&] (ConstBufferPtr buffer) {
                       ++nSuccesses;
                       BOOST_CHECK_EQUAL(buffer->size(), 15);
-                      std::string content(reinterpret_cast<const char*>(buffer->data()), buffer->size());
+                      std::string content(buffer->get<char>(), buffer->size());
                       BOOST_CHECK_EQUAL(content, "Data to encrypt");
                     },
-                    [&] (const ErrorCode& code, const std::string& msg) {
+                    [&] (const ErrorCode&, const std::string& msg) {
                       BOOST_TEST_MESSAGE(msg);
                       ++nFailures;
                     });

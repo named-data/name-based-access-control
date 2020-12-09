@@ -27,4 +27,6 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
+namespace ut = boost::unit_test;
+
 #endif // NDN_NAC_TESTS_BOOST_TEST_HPP

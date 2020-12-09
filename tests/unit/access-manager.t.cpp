@@ -80,11 +80,9 @@ BOOST_AUTO_TEST_CASE(PublishedKdks)
       .append("ENCRYPTED-BY")
       .append(user.getDefaultKey().getName());
 
-    face.receive(Interest(kdk)
-                 .setCanBePrefix(true).setMustBeFresh(true));
+    face.receive(Interest(kdk).setCanBePrefix(true).setMustBeFresh(true));
     advanceClocks(1_ms, 10);
 
-    BOOST_TEST_MESSAGE(kdk);
     BOOST_CHECK_EQUAL(face.sentData.at(0).getName(), kdk);
     face.sentData.clear();
   }
@@ -108,12 +106,10 @@ BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
   BOOST_CHECK_EQUAL(nKdk, 2);
 }
 
-BOOST_AUTO_TEST_CASE(DumpPackets) // use this to update content of other test cases
+BOOST_AUTO_TEST_CASE(GenerateTestData,
+  * ut::description("regenerates the static test data used by other test cases")
+  * ut::disabled())
 {
-  if (std::getenv("NAC_DUMP_PACKETS") == nullptr) {
-    return;
-  }
-
   std::cerr << "const Block nacIdentity = \"";
   auto block = m_keyChain.exportSafeBag(nacIdentity.getDefaultKey().getDefaultCertificate(),
                                         "password", strlen("password"))->wireEncode();
