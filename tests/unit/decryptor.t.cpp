@@ -19,17 +19,17 @@
 
 #include "decryptor.hpp"
 
-#include "encryptor.hpp"
-#include "encrypted-content.hpp"
 #include "access-manager.hpp"
+#include "encrypted-content.hpp"
+#include "encryptor.hpp"
 
 #include "tests/boost-test.hpp"
-#include "tests/dummy-forwarder.hpp"
 #include "tests/io-key-chain-fixture.hpp"
 #include "tests/unit/static-data.hpp"
 
 #include <iostream>
 #include <boost/mpl/vector.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace ndn {
 namespace nac {
@@ -39,25 +39,22 @@ class DecryptorStaticDataEnvironment : public IoKeyChainFixture
 {
 public:
   DecryptorStaticDataEnvironment()
-    : fw(m_io, m_keyChain)
-    , imsFace(static_cast<util::DummyClientFace&>(fw.addFace()))
   {
     StaticData data;
     for (const auto& block : data.managerPackets) {
       m_ims.insert(*make_shared<Data>(block));
     }
-
     for (const auto& block : data.encryptorPackets) {
       m_ims.insert(*make_shared<Data>(block));
     }
 
-    auto serveFromIms = [this] (const Name& prefix, const Interest& interest) {
+    auto serveFromIms = [this] (const Name&, const Interest& interest) {
       auto data = m_ims.find(interest);
       if (data != nullptr) {
-        imsFace.put(*data);
+        m_imsFace.put(*data);
       }
     };
-    imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
+    m_imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
     advanceClocks(1_ms, 10);
 
     // import "/first/user" identity
@@ -67,9 +64,10 @@ public:
     m_keyChain.createIdentity("/not/authorized");
   }
 
-public:
-  DummyForwarder fw;
-  util::DummyClientFace& imsFace;
+protected:
+  util::DummyClientFace m_imsFace{m_io, m_keyChain, {false, true}};
+
+private:
   InMemoryStoragePersistent m_ims;
 };
 
@@ -78,14 +76,15 @@ class DecryptorFixture : public DecryptorStaticDataEnvironment
 {
 public:
   DecryptorFixture()
-    : face(static_cast<util::DummyClientFace&>(fw.addFace()))
+    : face(m_io, m_keyChain, {false, true})
     , decryptor(m_keyChain.getPib().getIdentity(T().identity).getDefaultKey(), validator, m_keyChain, face)
   {
+    face.linkTo(m_imsFace);
     advanceClocks(1_ms, 10);
   }
 
 public:
-  util::DummyClientFace& face;
+  util::DummyClientFace face;
   ValidatorNull validator;
   Decryptor decryptor;
 };

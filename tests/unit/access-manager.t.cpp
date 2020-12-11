@@ -20,10 +20,10 @@
 #include "access-manager.hpp"
 
 #include "tests/boost-test.hpp"
-#include "tests/dummy-forwarder.hpp"
 #include "tests/io-key-chain-fixture.hpp"
 
 #include <iostream>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
 
 namespace ndn {
@@ -34,8 +34,7 @@ class AccessManagerFixture : public IoKeyChainFixture
 {
 public:
   AccessManagerFixture()
-    : fw(m_io, m_keyChain)
-    , face(static_cast<util::DummyClientFace&>(fw.addFace()))
+    : face(m_io, m_keyChain, {true, true})
     , accessIdentity(m_keyChain.createIdentity("/access/policy/identity"))
     , nacIdentity(m_keyChain.createIdentity("/access/policy/identity/NAC/dataset", // hack to get access to KEK key-id
                                             RsaKeyParams()))
@@ -51,8 +50,7 @@ public:
   }
 
 public:
-  DummyForwarder fw;
-  util::DummyClientFace& face;
+  util::DummyClientFace face;
   Identity accessIdentity;
   Identity nacIdentity;
   std::vector<Identity> userIdentities;

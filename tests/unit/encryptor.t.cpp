@@ -20,11 +20,11 @@
 #include "encryptor.hpp"
 
 #include "tests/boost-test.hpp"
-#include "tests/dummy-forwarder.hpp"
 #include "tests/io-key-chain-fixture.hpp"
 #include "tests/unit/static-data.hpp"
 
 #include <iostream>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
 
 namespace ndn {
@@ -35,8 +35,6 @@ class EncryptorStaticDataEnvironment : public IoKeyChainFixture
 {
 public:
   EncryptorStaticDataEnvironment(bool shouldPublishData)
-    : fw(m_io, m_keyChain)
-    , imsFace(static_cast<util::DummyClientFace&>(fw.addFace()))
   {
     if (shouldPublishData) {
       publishData();
@@ -45,14 +43,14 @@ public:
     auto serveFromIms = [this] (const Name&, const Interest& interest) {
       auto data = m_ims.find(interest);
       if (data != nullptr) {
-        imsFace.put(*data);
+        m_imsFace.put(*data);
       }
     };
-    imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
+    m_imsFace.setInterestFilter("/", serveFromIms, [] (auto...) {});
     advanceClocks(1_ms, 10);
 
-    imsFace.sentData.clear();
-    imsFace.sentInterests.clear();
+    m_imsFace.sentData.clear();
+    m_imsFace.sentInterests.clear();
   }
 
   void
@@ -65,9 +63,10 @@ public:
     advanceClocks(1_ms, 10);
   }
 
-public:
-  DummyForwarder fw;
-  util::DummyClientFace& imsFace;
+protected:
+  util::DummyClientFace m_imsFace{m_io, m_keyChain, {true, true}};
+
+private:
   InMemoryStoragePersistent m_ims;
 };
 
@@ -77,18 +76,19 @@ class EncryptorFixture : public EncryptorStaticDataEnvironment
 public:
   EncryptorFixture()
     : EncryptorStaticDataEnvironment(shouldPublishData)
-    , face(static_cast<util::DummyClientFace&>(fw.addFace()))
+    , face(m_io, m_keyChain, {true, true})
     , encryptor("/access/policy/identity/NAC/dataset", "/some/ck/prefix", signingWithSha256(),
                 [=] (const ErrorCode& code, const std::string& error) {
                   onFailure(code, error);
                 },
                 validator, m_keyChain, face)
   {
+    face.linkTo(m_imsFace);
     advanceClocks(1_ms, 10);
   }
 
 public:
-  util::DummyClientFace& face;
+  util::DummyClientFace face;
   ValidatorNull validator;
   Encryptor encryptor;
   util::Signal<EncryptorFixture, ErrorCode, std::string> onFailure;
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
   BOOST_CHECK_EQUAL(face.sentInterests.at(0).getName().getPrefix(6),
                     Name("/access/policy/identity/NAC/dataset/KEK"));
 
-  auto kek = imsFace.sentData.at(0);
+  auto kek = m_imsFace.sentData.at(0);
   BOOST_CHECK_EQUAL(kek.getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
   BOOST_CHECK_EQUAL(kek.getName().size(), 7);
 
@@ -155,15 +155,15 @@ BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)
   BOOST_CHECK_EQUAL(face.sentInterests.at(0).getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
 
   // and failed
-  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+  BOOST_CHECK_EQUAL(m_imsFace.sentData.size(), 0);
 
   advanceClocks(1_s, 13); // 4_s default interest lifetime x 3
   BOOST_CHECK_EQUAL(nErrors, 1);
-  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+  BOOST_CHECK_EQUAL(m_imsFace.sentData.size(), 0);
 
   advanceClocks(1_s, 730); // 60 seconds between attempts + ~12 seconds for each attempt
   BOOST_CHECK_EQUAL(nErrors, 11);
-  BOOST_CHECK_EQUAL(imsFace.sentData.size(), 0);
+  BOOST_CHECK_EQUAL(m_imsFace.sentData.size(), 0);
 
   // check recovery
 
@@ -171,7 +171,7 @@ BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)
 
   advanceClocks(1_s, 73);
 
-  auto kek = imsFace.sentData.at(0);
+  auto kek = m_imsFace.sentData.at(0);
   BOOST_CHECK_EQUAL(kek.getName().getPrefix(6), Name("/access/policy/identity/NAC/dataset/KEK"));
   BOOST_CHECK_EQUAL(kek.getName().size(), 7);
 }
