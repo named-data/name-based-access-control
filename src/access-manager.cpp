@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,6 +20,7 @@
 #include "access-manager.hpp"
 #include "encrypted-content.hpp"
 
+#include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
 NDN_LOG_INIT(nac.AccessManager);

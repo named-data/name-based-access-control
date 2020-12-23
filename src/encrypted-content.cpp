@@ -21,6 +21,7 @@
 
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/util/concepts.hpp>
+#include <ndn-cxx/util/exception.hpp>
 
 namespace ndn {
 namespace nac {
@@ -153,7 +154,7 @@ EncryptedContent::wireEncode(EncodingImpl<TAG>& block) const
     totalLength += block.prependBlock(m_payload);
   }
   else {
-    BOOST_THROW_EXCEPTION(Error("Required EncryptedPayload is not set on EncryptedContent"));
+    NDN_THROW(Error("Required EncryptedPayload is not set on EncryptedContent"));
   }
 
   totalLength += block.prependVarNumber(totalLength);
@@ -181,7 +182,7 @@ void
 EncryptedContent::wireDecode(const Block& wire)
 {
   if (!wire.hasWire()) {
-    BOOST_THROW_EXCEPTION(Error("The supplied block does not contain wire format"));
+    NDN_THROW(Error("The supplied block does not contain wire format"));
   }
 
   m_payload.reset();
@@ -192,8 +193,8 @@ EncryptedContent::wireDecode(const Block& wire)
   m_wire.parse();
 
   if (m_wire.type() != tlv::EncryptedContent) {
-    BOOST_THROW_EXCEPTION(Error("Unexpected TLV type (expecting EncryptedContent, got" +
-                                ndn::to_string(m_wire.type()) + ")"));
+    NDN_THROW(Error("Unexpected TLV type (expecting EncryptedContent, got " +
+                    ndn::to_string(m_wire.type()) + ")"));
   }
 
   auto block = m_wire.find(tlv::EncryptedPayload);
@@ -201,7 +202,7 @@ EncryptedContent::wireDecode(const Block& wire)
     m_payload = *block;
   }
   else {
-    BOOST_THROW_EXCEPTION(Error("Required EncryptedPayload not found in EncryptedContent"));
+    NDN_THROW(Error("Required EncryptedPayload not found in EncryptedContent"));
   }
 
   block = m_wire.find(tlv::InitializationVector);

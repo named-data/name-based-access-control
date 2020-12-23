@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -19,6 +19,10 @@
 
 #include "decryptor.hpp"
 
+#include <ndn-cxx/security/transform/block-cipher.hpp>
+#include <ndn-cxx/security/transform/buffer-source.hpp>
+#include <ndn-cxx/security/transform/stream-sink.hpp>
+#include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
 namespace ndn {
@@ -251,7 +255,7 @@ Decryptor::doDecrypt(const EncryptedContent& content, const Buffer& ckBits,
                      const ErrorCallback& onFailure)
 {
   if (!content.hasIv()) {
-    BOOST_THROW_EXCEPTION(Error("Expecting Initial Vector in the encrypted content, but it is not present"));
+    NDN_THROW(Error("Expecting Initialization Vector in the encrypted content, but it is not present"));
   }
 
   OBufferStream os;

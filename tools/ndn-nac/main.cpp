@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,12 +20,13 @@
 #include "ndn-nac.hpp"
 #include "version.hpp"
 
-#include <boost/exception/get_error_info.hpp>
+#include <boost/exception/diagnostic_information.hpp>
+
 #include <ndn-cxx/util/logger.hpp>
 
 NDN_LOG_INIT(nac.Cmd);
 
-std::string nac_helper = R"STR(
+const char NAC_HELP_TEXT[] = R"STR(
   help         Show all commands
   version      Show version and exit
   dump-kek     Dump KEK
@@ -36,39 +37,28 @@ int
 main(int argc, char** argv)
 {
   if (argc < 2) {
-    std::cerr << nac_helper << std::endl;
-    return 1;
+    std::cerr << NAC_HELP_TEXT << std::endl;
+    return 2;
   }
 
   using namespace ndn::nac;
 
   std::string command(argv[1]);
   try {
-    if (command == "help")              { std::cout << nac_helper << std::endl; }
+    if (command == "help")              { std::cout << NAC_HELP_TEXT << std::endl; }
     else if (command == "version")      { std::cout << NDN_NAC_VERSION_BUILD_STRING << std::endl; }
     else if (command == "dump-kek")     { return nac_dump_kek(argc - 1, argv + 1); }
     else if (command == "add-member")   { return nac_add_member(argc - 1, argv + 1); }
     else {
-      std::cerr << nac_helper << std::endl;
-      return 1;
+      std::cerr << "ERROR: Unknown command '" << command << "'\n"
+                << "\n"
+                << NAC_HELP_TEXT << std::endl;
+      return 2;
     }
   }
   catch (const std::exception& e) {
-
-    std::cerr << "ERROR: " << e.what();
-
-    std::ostringstream extendedError;
-    const char* const* file = boost::get_error_info<boost::throw_file>(e);
-    const int* line = boost::get_error_info<boost::throw_line>(e);
-    const char* const* func = boost::get_error_info<boost::throw_function>(e);
-    if (file && line) {
-      extendedError << " [from " << *file << ":" << *line;
-      if (func) {
-        extendedError << " in " << *func;
-      }
-      extendedError << "]";
-    }
-    NDN_LOG_ERROR(e.what() << extendedError.str());
+    std::cerr << "ERROR: " << e.what() << std::endl;
+    NDN_LOG_ERROR(boost::diagnostic_information(e));
     return 1;
   }
 

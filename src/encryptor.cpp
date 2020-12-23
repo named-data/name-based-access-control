@@ -19,8 +19,10 @@
 
 #include "encryptor.hpp"
 
+#include <ndn-cxx/security/transform/block-cipher.hpp>
+#include <ndn-cxx/security/transform/buffer-source.hpp>
+#include <ndn-cxx/security/transform/stream-sink.hpp>
 #include <ndn-cxx/util/logger.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace ndn {
 namespace nac {
@@ -112,7 +114,7 @@ Encryptor::regenerateCk()
 EncryptedContent
 Encryptor::encrypt(const uint8_t* data, size_t size)
 {
-  // Generate initial vector
+  // Generate IV
   auto iv = make_shared<Buffer>(AES_IV_SIZE);
   random::generateSecureBytes(iv->data(), iv->size());
 

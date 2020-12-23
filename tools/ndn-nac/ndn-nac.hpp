@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
@@ -22,17 +22,14 @@
 
 #include "common.hpp"
 
-#include <fstream>
 #include <iostream>
-#include <string>
 
-#include <boost/asio.hpp>
-#include <boost/exception/all.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 namespace ndn {
@@ -54,7 +51,7 @@ loadCertificate(const std::string& fileName)
     cert = io::load<Certificate>(fileName);
 
   if (cert == nullptr) {
-    BOOST_THROW_EXCEPTION(std::runtime_error("Cannot load certificate from " + fileName));
+    NDN_THROW(std::runtime_error("Cannot load certificate from " + fileName));
   }
   return *cert;
 }

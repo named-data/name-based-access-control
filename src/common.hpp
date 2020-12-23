@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2020, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
@@ -48,13 +48,9 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/ims/in-memory-storage-persistent.hpp>
 #include <ndn-cxx/interest.hpp>
-#include <ndn-cxx/link.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/security/signing-helpers.hpp>
-#include <ndn-cxx/security/transform/block-cipher.hpp>
-#include <ndn-cxx/security/transform/buffer-source.hpp>
+#include <ndn-cxx/security/signing-info.hpp>
 #include <ndn-cxx/security/transform/public-key.hpp>
-#include <ndn-cxx/security/transform/stream-sink.hpp>
 #include <ndn-cxx/security/validation-callback.hpp>
 #include <ndn-cxx/security/validation-error.hpp>
 #include <ndn-cxx/security/validator-null.hpp>
@@ -63,7 +59,6 @@
 #include <ndn-cxx/util/signal.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
 #include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
@@ -131,8 +126,7 @@ enum class ErrorCode {
   EncryptionFailure = 103
 };
 
-using ErrorCallback = std::function<void (const ErrorCode&, const std::string&)>;
-
+using ErrorCallback = std::function<void(const ErrorCode&, const std::string&)>;
 
 class Error : public std::runtime_error
 {
