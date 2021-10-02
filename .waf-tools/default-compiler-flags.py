@@ -184,7 +184,8 @@ class ClangFlags(GccBasicFlags):
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
                                   ['-isystem', '/opt/local/include']] # for MacPorts
         if Utils.unversioned_sys_platform() == 'freebsd':
-            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']] # Bug #4790
+            # Bug #4790
+            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']]
         return flags
 
     def getDebugFlags(self, conf):
@@ -194,10 +195,7 @@ class ClangFlags(GccBasicFlags):
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = self.getCompilerVersion(conf)
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
-            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
-        if version < (6, 0, 0):
+        if self.getCompilerVersion(conf) < (6, 0, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags
 
@@ -208,9 +206,6 @@ class ClangFlags(GccBasicFlags):
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = self.getCompilerVersion(conf)
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
-            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
-        if version < (6, 0, 0):
+        if self.getCompilerVersion(conf) < (6, 0, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags

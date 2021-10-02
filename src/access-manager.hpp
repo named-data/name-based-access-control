@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2021, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -47,8 +47,6 @@ public:
 
 public:
   /**
-   * @param identity Identity of the namespace (i.e., public and private keys)
-   *
    * @param identity Data owner's namespace identity (will be used to sign KEK and KDK)
    * @param dataset Name of dataset that this manager is controlling
    * @param keyChain KeyChain

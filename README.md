@@ -1,7 +1,8 @@
 # NAC: Named-Based Access Control Library for NDN
 
-![Language](https://img.shields.io/badge/C%2B%2B-14-blue.svg)
-[![Build Status](https://travis-ci.org/named-data/name-based-access-control.svg?branch=new)](https://travis-ci.org/named-data/name-based-access-control)
+[![CI](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml)
+[![Docs](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml)
+![Language](https://img.shields.io/badge/C%2B%2B-14-blue)
 
 ## Reporting bugs
 

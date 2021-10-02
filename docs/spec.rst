@@ -59,7 +59,7 @@ KEK is published as a single data packet with name ``/[access-namespace]/NAC/[da
 .. code-block:: abnf
 
    Kek = DATA-TYPE TLV-LENGTH
-         Name ; /[access-namespace]/NAC/[dataset]/KEK/[key-id]
+         Name     ; /[access-namespace]/NAC/[dataset]/KEK/[key-id]
          MetaInfo ; ContentType = KEY, FreshnessPeriod = 1 hour default value
          KekContent
          DataSignature
@@ -73,7 +73,7 @@ Different versions of KDK are published, encrypted by the public key of the indi
 .. code-block:: abnf
 
    Kdk = DATA-TYPE TLV-LENGTH
-         Name ; /[access-namespace]/NAC/[dataset]/KDK/[key-id]/ENCRYPTED-BY/<authorized-member>/KEY/[member-key-id]
+         Name     ; /[access-namespace]/NAC/[dataset]/KDK/[key-id]/ENCRYPTED-BY/<authorized-member>/KEY/[member-key-id]
          MetaInfo ; ContentType = BLOB, FreshnessPeriod = 1 hour default value
          KdkContent
          DataSignature
@@ -83,7 +83,7 @@ Different versions of KDK are published, encrypted by the public key of the indi
 
 Within the ``EncryptedContent`` element,
 
-* ``EncryptedPayload`` contains `SafeBag <https://named-data.net/doc/ndn-cxx/0.7.0/specs/safe-bag.html>`__ of private key ``/[access-namespace]/NAC/[dataset]/KEY/[key-id]``
+* ``EncryptedPayload`` contains `SafeBag <https://named-data.net/doc/ndn-cxx/0.7.1/specs/safe-bag.html>`__ of private key ``/[access-namespace]/NAC/[dataset]/KEY/[key-id]``
 * ``EncryptedPayloadKey`` contains password for SafeBag, encrypted by public key ``/<authorized-member>/KEY/[member-key-id]``
 * ``InitializationVector`` and ``Name`` must be omitted
 
@@ -100,7 +100,7 @@ Encryptor encrypts (synchronous operation) the requested content and returns an 
 
      EncryptedPayload      = AES CBC encrypted blob
      InitializationVector  = Random initial vector for AES CBC encryption
-     EncryptedPayloadKey (not set)
+     EncryptedPayloadKey   (not set)
      Name                  = Prefix of ContentKey (CK) data packet /[ck-prefix]/CK/[ck-id]
 
 During initialization or when requested by the application, the Encryptor (re-)generates a random key for AES CBC encryption.
@@ -109,7 +109,7 @@ The encrypted version of this key is published (asynchronous operation, continge
 .. code-block:: abnf
 
    CkData = DATA-TYPE TLV-LENGTH
-            Name ; /[ck-prefix]/CK/[ck-id]/ENCRYPTED-BY/[access-namespace]/NAC/[dataset]/KEK/[key-id]
+            Name     ; /[ck-prefix]/CK/[ck-id]/ENCRYPTED-BY/[access-namespace]/NAC/[dataset]/KEK/[key-id]
             MetaInfo ; ContentType = BLOB, FreshnessPeriod = 1 hour default value
             CkContent
             DataSignature
