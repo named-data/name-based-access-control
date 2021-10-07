@@ -1,7 +1,5 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-from waflib import Utils
-
 top = '..'
 
 def build(bld):
@@ -47,13 +45,3 @@ def build(bld):
                 source=[],
                 export_includes='.',
                 use=testableObjects)
-
-    # Tool wrappers
-    wrapperFiles = bld.path.ant_glob('wrapper/*.sh')
-    bld(name='wrappers',
-        features='subst',
-        source=wrapperFiles,
-        target=['../bin/%s' % node.change_ext('', '.sh').path_from(bld.path.find_dir('wrapper').get_bld())
-                for node in wrapperFiles],
-        install_path='${BINDIR}',
-        chmod=Utils.O755)

@@ -3,23 +3,21 @@
 top = '..'
 
 def build(bld):
-    # List all .cpp files (whole example should be in one .cpp)
-    for example in bld.path.ant_glob(['*.cpp']):
-        name = example.change_ext('').path_from(bld.path.get_bld())
-        bld(features=['cxx', 'cxxprogram'],
-            target=name,
-            source=[example] + bld.path.ant_glob(['%s/**/*.cpp' % name]),
-            use='NDN_CXX libndn-nac',
-            install_path=None
-            )
+    # List all .cpp files (whole example in one .cpp)
+    for ex in bld.path.ant_glob('*.cpp'):
+        name = ex.change_ext('').path_from(bld.path.get_bld())
+        bld.program(name='example-%s' % name,
+                    target='nac-%s' % name,
+                    source=[ex],
+                    use='libndn-nac',
+                    install_path=None)
 
-    # List all directories files (example can has multiple .cpp in the directory)
-    for name in bld.path.ant_glob(['*'], dir=True, src=False):
+    # List all directories (example can have multiple .cpp in the directory)
+    for subdir in bld.path.ant_glob('*', dir=True, src=False):
         name = subdir.path_from(bld.path)
-        bld(features=['cxx', 'cxxprogram'],
-            target="%s/%s" % (name, name),
-            source=bld.path.ant_glob(['%s/**/*.cpp' % name]),
-            use='NDN_CXX libndn-nac',
-            install_path=None,
-            includes='%s' % name,
-            )
+        bld.program(name='example-%s' % name,
+                    target=name,
+                    source=subdir.ant_glob('**/*.cpp'),
+                    use='libndn-nac',
+                    includes=name,
+                    install_path=None)

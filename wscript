@@ -10,11 +10,14 @@ GIT_TAG_PREFIX = 'nac-'
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['default-compiler-flags', 'coverage', 'sanitizers',
-              'boost', 'doxygen', 'sphinx_build'],
+    opt.load(['default-compiler-flags',
+              'coverage', 'sanitizers', 'boost',
+              'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
     optgrp = opt.add_option_group('NDN-NAC Options')
+    optgrp.add_option('--with-examples', action='store_true', default=False,
+                      help='Build examples')
     optgrp.add_option('--with-tests', action='store_true', default=False,
                       help='Build unit tests')
 
@@ -23,7 +26,7 @@ def configure(conf):
                'default-compiler-flags', 'boost',
                'doxygen', 'sphinx_build'])
 
-    conf.env.WITH_EXAMPLES = True
+    conf.env.WITH_EXAMPLES = conf.options.with_examples
     conf.env.WITH_TESTS = conf.options.with_tests
 
     conf.find_program('dot', var='DOT', mandatory=False)
