@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2021, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -44,16 +44,21 @@ nac_add_member(int argc, char** argv);
 inline Certificate
 loadCertificate(const std::string& fileName)
 {
-  shared_ptr<Certificate> cert;
-  if (fileName == "-")
-    cert = io::load<Certificate>(std::cin);
-  else
-    cert = io::load<Certificate>(fileName);
+  try {
+    if (fileName == "-") {
+      return io::loadTlv<Certificate>(std::cin, io::BASE64);
+    }
 
-  if (cert == nullptr) {
-    NDN_THROW(std::runtime_error("Cannot load certificate from " + fileName));
+    std::ifstream file(fileName);
+    if (!file) {
+      NDN_THROW(std::runtime_error("Cannot open '" + fileName + "'"));
+    }
+    return io::loadTlv<Certificate>(file, io::BASE64);
   }
-  return *cert;
+  catch (const io::Error& e) {
+    NDN_THROW_NESTED(std::runtime_error("Cannot load certificate from '" + fileName +
+                                        "': malformed TLV or not in base64 format (" + e.what() + ")"));
+  }
 }
 
 } // namespace nac
