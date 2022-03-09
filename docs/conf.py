@@ -18,7 +18,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = u'NAC: Name-based Access Control library'
-copyright = u'Copyright © 2014-2021 Regents of the University of California.'
+copyright = u'Copyright © 2014-2022 Regents of the University of California.'
 author = u'Named Data Networking Project'
 
 # The short X.Y version.
