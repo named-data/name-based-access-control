@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
   std::cerr << "const Block nacIdentity = \"";
   auto block = m_keyChain.exportSafeBag(nacIdentity.getDefaultKey().getDefaultCertificate(),
                                         "password", strlen("password"))->wireEncode();
-  printHex(std::cerr, block.wire(), block.size(), true);
+  printHex(std::cerr, block, true);
   std::cerr << "\"_block;\n\n";
 
   std::cerr << "const std::vector<Block> userIdentities = {\n";
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
     std::cerr << "  \"";
     block = m_keyChain.exportSafeBag(userId.getDefaultKey().getDefaultCertificate(),
                                      "password", strlen("password"))->wireEncode();
-    printHex(std::cerr, block.wire(), block.size(), true);
+    printHex(std::cerr, block, true);
     std::cerr << "\"_block,\n";
   }
   std::cerr << "};\n\n";
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
   std::cerr << "const std::vector<Block> managerPackets = {\n";
   for (const auto& data : manager) {
     std::cerr << "  \"";
-    printHex(std::cerr, data.wireEncode().wire(), data.wireEncode().size(), true);
+    printHex(std::cerr, data.wireEncode(), true);
     std::cerr << "\"_block,\n";
   }
   std::cerr << "};\n\n";

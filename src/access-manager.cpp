@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -87,7 +87,7 @@ AccessManager::addMember(const Certificate& memberCert)
 
   const size_t secretLength = 32;
   uint8_t secret[secretLength + 1];
-  random::generateSecureBytes(secret, secretLength);
+  random::generateSecureBytes({secret, secretLength});
   // because of stupid bug in ndn-cxx, remove all \0 in generated secret, replace with 1
   for (size_t i = 0; i < secretLength; ++i) {
     if (secret[i] == 0) {
@@ -100,11 +100,11 @@ AccessManager::addMember(const Certificate& memberCert)
                                           reinterpret_cast<const char*>(secret), secretLength);
 
   PublicKey memberKey;
-  memberKey.loadPkcs8(memberCert.getPublicKey().data(), memberCert.getPublicKey().size());
+  memberKey.loadPkcs8(memberCert.getPublicKey());
 
   EncryptedContent content;
   content.setPayload(kdkData->wireEncode());
-  content.setPayloadKey(memberKey.encrypt(secret, secretLength));
+  content.setPayloadKey(memberKey.encrypt({secret, secretLength}));
 
   auto kdk = make_shared<Data>(kdkName);
   kdk->setContent(content.wireEncode());

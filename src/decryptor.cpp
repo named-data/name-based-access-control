@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -109,7 +109,7 @@ Decryptor::fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, siz
                                                        .setCanBePrefix(true),
     [=] (const Interest& ckInterest, const Data& ckData) {
       ck->second.pendingInterest = nullopt;
-      // @TODO verify if the key is legit
+      // TODO: verify that the key is legit
       Name kdkPrefix, kdkIdentity, kdkKeyName;
       std::tie(kdkPrefix, kdkIdentity, kdkKeyName) =
         extractKdkInfoFromCkName(ckData.getName(), ckInterest.getName(), onFailure);
@@ -165,12 +165,10 @@ Decryptor::fetchKdk(ContentKeys::iterator ck, const Name& kdkPrefix, const Data&
 
   NDN_LOG_DEBUG("Fetching KDK " << kdkName);
 
-  ck->second.pendingInterest = m_face.expressInterest(Interest(kdkName)
-                                                     .setMustBeFresh(true)
-                                                     .setCanBePrefix(false),
+  ck->second.pendingInterest = m_face.expressInterest(Interest(kdkName).setMustBeFresh(true),
     [=] (const Interest&, const Data& kdkData) {
       ck->second.pendingInterest = nullopt;
-      // @TODO verify if the key is legit
+      // TODO: verify that the key is legit
 
       bool isOk = decryptAndImportKdk(kdkData, onFailure);
       if (!isOk)
@@ -205,8 +203,7 @@ Decryptor::decryptAndImportKdk(const Data& kdkData, const ErrorCallback& onFailu
     EncryptedContent content(kdkData.getContent().blockFromValue());
 
     SafeBag safeBag(content.getPayload().blockFromValue());
-    auto secret = m_keyChain.getTpm().decrypt(content.getPayloadKey().value(),
-                                              content.getPayloadKey().value_size(),
+    auto secret = m_keyChain.getTpm().decrypt(content.getPayloadKey().value_bytes(),
                                               m_credentialsKey.getName());
     if (secret == nullptr) {
       onFailure(ErrorCode::TpmKeyNotFound,
@@ -233,8 +230,7 @@ Decryptor::decryptCkAndProcessPendingDecrypts(ContentKeys::iterator ck, const Da
 
   EncryptedContent content(ckData.getContent().blockFromValue());
 
-  auto ckBits = m_internalKeyChain.getTpm().decrypt(content.getPayload().value(), content.getPayload().value_size(),
-                                                    kdkKeyName);
+  auto ckBits = m_internalKeyChain.getTpm().decrypt(content.getPayload().value_bytes(), kdkKeyName);
   if (ckBits == nullptr) {
     onFailure(ErrorCode::TpmKeyNotFound, "Could not decrypt secret, " + kdkKeyName.toUri() + " not found in TPM");
     return;
@@ -259,11 +255,10 @@ Decryptor::doDecrypt(const EncryptedContent& content, const Buffer& ckBits,
   }
 
   OBufferStream os;
-  security::transform::bufferSource(content.getPayload().value(), content.getPayload().value_size())
+  security::transform::bufferSource(content.getPayload().value_bytes())
     >> security::transform::blockCipher(BlockCipherAlgorithm::AES_CBC,
                                         CipherOperator::DECRYPT,
-                                        ckBits.data(), ckBits.size(),
-                                        content.getIv().value(), content.getIv().value_size())
+                                        ckBits, content.getIv().value_bytes())
     >> security::transform::streamSink(os);
 
   onSuccess(os.buf());

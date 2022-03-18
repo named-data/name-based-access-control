@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -37,15 +37,12 @@ class Producer : noncopyable
 {
 public:
   Producer()
-    : m_face(nullptr, m_keyChain)
-    , m_validator(m_face)
-    , m_accessManager(m_keyChain.createIdentity("/nac/example", RsaKeyParams()), "test",
+    : m_accessManager(m_keyChain.createIdentity("/nac/example", RsaKeyParams()), "test",
                       m_keyChain, m_face)
     , m_encryptor("/nac/example/NAC/test",
                   "/nac/example/CK", signingWithSha256(),
-                  [] (auto...) {
-                    std::cerr << "Failed to publish CK";
-                  }, m_validator, m_keyChain, m_face)\
+                  [] (auto&&...) { std::cerr << "Failed to publish CK"; },
+                  m_validator, m_keyChain, m_face)
   {
     m_validator.load(R"CONF(
         trust-anchor
@@ -58,19 +55,19 @@ public:
   void
   run()
   {
-    // give access to default identity. If consumer uses the same default identity, he will be able to decrypt
+    // Give access to default identity. If consumer uses the same default identity, it will be able to decrypt
     m_accessManager.addMember(m_keyChain.getPib().getDefaultIdentity().getDefaultKey().getDefaultCertificate());
 
     m_face.setInterestFilter("/example/testApp",
-                             bind(&Producer::onInterest, this, _1, _2),
-                             RegisterPrefixSuccessCallback(),
-                             bind(&Producer::onRegisterFailed, this, _1, _2));
+                             std::bind(&Producer::onInterest, this, _1, _2),
+                             nullptr, // RegisterPrefixSuccessCallback is optional
+                             std::bind(&Producer::onRegisterFailed, this, _1, _2));
     m_face.processEvents();
   }
 
 private:
   void
-  onInterest(const InterestFilter& filter, const Interest& interest)
+  onInterest(const InterestFilter&, const Interest& interest)
   {
     std::cout << "<< I: " << interest << std::endl;
 
@@ -80,14 +77,13 @@ private:
       .append("testApp") // add "testApp" component to Interest name
       .appendVersion();  // add "version" component (current UNIX timestamp in milliseconds)
 
-    static const std::string content = "HELLO KITTY";
-
     // Create Data packet
-    shared_ptr<Data> data = make_shared<Data>();
+    auto data = std::make_shared<Data>();
     data->setName(dataName);
     data->setFreshnessPeriod(10_s); // 10 seconds
 
-    auto blob = m_encryptor.encrypt(reinterpret_cast<const uint8_t*>(content.data()), content.size());
+    static const std::string content = "HELLO KITTY";
+    auto blob = m_encryptor.encrypt({reinterpret_cast<const uint8_t*>(content.data()), content.size()});
     data->setContent(blob.wireEncode());
 
     // Sign Data packet with default identity
@@ -104,16 +100,15 @@ private:
   void
   onRegisterFailed(const Name& prefix, const std::string& reason)
   {
-    std::cerr << "ERROR: Failed to register prefix \""
-              << prefix << "\" in local hub's daemon (" << reason << ")"
-              << std::endl;
+    std::cerr << "ERROR: Failed to register prefix '" << prefix
+              << "' with the local forwarder (" << reason << ")" << std::endl;
     m_face.shutdown();
   }
 
 private:
   KeyChain m_keyChain;
-  Face m_face;
-  ValidatorConfig m_validator;
+  Face m_face{nullptr, m_keyChain};
+  ValidatorConfig m_validator{m_face};
   AccessManager m_accessManager;
   Encryptor m_encryptor;
 };
@@ -125,12 +120,13 @@ private:
 int
 main(int argc, char** argv)
 {
-  ndn::nac::examples::Producer producer;
   try {
+    ndn::nac::examples::Producer producer;
     producer.run();
+    return 0;
   }
   catch (const std::exception& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
+    return 1;
   }
-  return 0;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -26,7 +26,6 @@
 namespace ndn {
 namespace nac {
 
-BOOST_CONCEPT_ASSERT((boost::EqualityComparable<EncryptedContent>));
 BOOST_CONCEPT_ASSERT((WireEncodable<EncryptedContent>));
 BOOST_CONCEPT_ASSERT((WireDecodable<EncryptedContent>));
 static_assert(std::is_base_of<ndn::tlv::Error, EncryptedContent::Error>::value,
@@ -42,7 +41,7 @@ EncryptedContent::setPayload(Block payload)
 {
   m_wire.reset();
   if (payload.type() != tlv::EncryptedPayload) {
-    m_payload = Block(tlv::EncryptedPayload, std::move(payload));
+    m_payload = Block(tlv::EncryptedPayload, payload);
   }
   else {
     m_payload = std::move(payload);
@@ -63,7 +62,7 @@ EncryptedContent::setIv(Block iv)
 {
   m_wire.reset();
   if (iv.type() != tlv::InitializationVector) {
-    m_iv = Block(tlv::InitializationVector, std::move(iv));
+    m_iv = Block(tlv::InitializationVector, iv);
   }
   else {
     m_iv = std::move(iv);
@@ -75,7 +74,7 @@ EncryptedContent&
 EncryptedContent::setIv(ConstBufferPtr iv)
 {
   m_wire.reset();
-  m_iv = Block(tlv::InitializationVector, iv);
+  m_iv = Block(tlv::InitializationVector, std::move(iv));
   return *this;
 }
 
@@ -83,7 +82,7 @@ EncryptedContent&
 EncryptedContent::unsetIv()
 {
   m_wire.reset();
-  m_iv = Block();
+  m_iv = {};
   return *this;
 }
 
@@ -92,7 +91,7 @@ EncryptedContent::setPayloadKey(Block key)
 {
   m_wire.reset();
   if (key.type() != tlv::EncryptedPayloadKey) {
-    m_payloadKey = Block(tlv::EncryptedPayloadKey, std::move(key));
+    m_payloadKey = Block(tlv::EncryptedPayloadKey, key);
   }
   else {
     m_payloadKey = std::move(key);
@@ -112,7 +111,7 @@ EncryptedContent&
 EncryptedContent::unsetPayloadKey()
 {
   m_wire.reset();
-  m_payloadKey = Block();
+  m_payloadKey = {};
   return *this;
 }
 
@@ -128,37 +127,37 @@ EncryptedContent&
 EncryptedContent::unsetKeyLocator()
 {
   m_wire.reset();
-  m_keyLocator = Name();
+  m_keyLocator = {};
   return *this;
 }
 
 template<encoding::Tag TAG>
 size_t
-EncryptedContent::wireEncode(EncodingImpl<TAG>& block) const
+EncryptedContent::wireEncode(EncodingImpl<TAG>& encoder) const
 {
   size_t totalLength = 0;
 
   if (hasKeyLocator()) {
-    totalLength += m_keyLocator.wireEncode(block);
+    totalLength += m_keyLocator.wireEncode(encoder);
   }
 
   if (hasPayloadKey()) {
-    totalLength += block.prependBlock(m_payloadKey);
+    totalLength += prependBlock(encoder, m_payloadKey);
   }
 
   if (hasIv()) {
-    totalLength += block.prependBlock(m_iv);
+    totalLength += prependBlock(encoder, m_iv);
   }
 
   if (m_payload.isValid()) {
-    totalLength += block.prependBlock(m_payload);
+    totalLength += prependBlock(encoder, m_payload);
   }
   else {
     NDN_THROW(Error("Required EncryptedPayload is not set on EncryptedContent"));
   }
 
-  totalLength += block.prependVarNumber(totalLength);
-  totalLength += block.prependVarNumber(tlv::EncryptedContent);
+  totalLength += encoder.prependVarNumber(totalLength);
+  totalLength += encoder.prependVarNumber(tlv::EncryptedContent);
   return totalLength;
 }
 
@@ -219,12 +218,6 @@ EncryptedContent::wireDecode(const Block& wire)
   if (block != m_wire.elements_end()) {
     m_keyLocator.wireDecode(*block);
   }
-}
-
-bool
-EncryptedContent::operator==(const EncryptedContent& rhs) const
-{
-  return wireEncode() == rhs.wireEncode();
 }
 
 } // namespace nac

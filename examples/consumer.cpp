@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2018, Regents of the University of California
+/*
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -35,9 +35,8 @@ class Consumer : noncopyable
 {
 public:
   Consumer()
-    : m_face(nullptr, m_keyChain)
-    , m_validator(m_face)
-    , m_decryptor(m_keyChain.getPib().getDefaultIdentity().getDefaultKey(), m_validator, m_keyChain, m_face)
+    : m_decryptor(m_keyChain.getPib().getDefaultIdentity().getDefaultKey(),
+                  m_validator, m_keyChain, m_face)
   {
     m_validator.load(R"CONF(
         trust-anchor
@@ -51,58 +50,57 @@ public:
   run()
   {
     Interest interest(Name("/example/testApp/randomData"));
-    interest.setInterestLifetime(2_s); // 2 seconds
     interest.setMustBeFresh(true);
+    interest.setInterestLifetime(3_s); // 3 seconds
 
+    std::cout << "Sending Interest " << interest << std::endl;
     m_face.expressInterest(interest,
-                           bind(&Consumer::onData, this,  _1, _2),
-                           bind(&Consumer::onNack, this, _1, _2),
-                           bind(&Consumer::onTimeout, this, _1));
+                           std::bind(&Consumer::onData, this,  _1, _2),
+                           std::bind(&Consumer::onNack, this, _1, _2),
+                           std::bind(&Consumer::onTimeout, this, _1));
 
-    std::cout << "Sending " << interest << std::endl;
-
-    // processEvents will block until the requested data received or timeout occurs
+    // processEvents will block until the requested data is received or a timeout occurs
     m_face.processEvents();
   }
 
 private:
   void
-  onData(const Interest& interest, const Data& data)
+  onData(const Interest&, const Data& data)
   {
     m_validator.validate(data,
       [=] (const Data& data) {
         m_decryptor.decrypt(data.getContent().blockFromValue(),
-          [=] (ConstBufferPtr content) {
+          [] (const ConstBufferPtr& content) {
             std::cout << "Decrypted content: "
                       << std::string(reinterpret_cast<const char*>(content->data()), content->size())
                       << std::endl;
           },
-          [=] (const ErrorCode&, const std::string& error) {
+          [] (const ErrorCode&, const std::string& error) {
             std::cerr << "Cannot decrypt data: " << error << std::endl;
           });
       },
-      [=] (const Data& data, const ValidationError& error) {
+      [] (const Data&, const ValidationError& error) {
         std::cerr << "Cannot validate retrieved data: " << error << std::endl;
       });
   }
 
   void
-  onNack(const Interest& interest, const lp::Nack& nack)
+  onNack(const Interest& interest, const lp::Nack& nack) const
   {
-    std::cout << "received Nack with reason " << nack.getReason()
+    std::cout << "Received Nack with reason " << nack.getReason()
               << " for interest " << interest << std::endl;
   }
 
   void
-  onTimeout(const Interest& interest)
+  onTimeout(const Interest& interest) const
   {
-    std::cout << "Timeout " << interest << std::endl;
+    std::cout << "Timeout for " << interest << std::endl;
   }
 
 private:
   KeyChain m_keyChain;
-  Face m_face;
-  ValidatorConfig m_validator;
+  Face m_face{nullptr, m_keyChain};
+  ValidatorConfig m_validator{m_face};
   Decryptor m_decryptor;
 };
 
@@ -113,12 +111,13 @@ private:
 int
 main(int argc, char** argv)
 {
-  ndn::nac::examples::Consumer consumer;
   try {
+    ndn::nac::examples::Consumer consumer;
     consumer.run();
+    return 0;
   }
   catch (const std::exception& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
+    return 1;
   }
-  return 0;
 }

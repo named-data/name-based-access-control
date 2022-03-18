@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE(EncryptAndPublishedCk)
   encryptor.regenerateCk();
   BOOST_CHECK_EQUAL(encryptor.m_isKekRetrievalInProgress, true);
 
-  std::string plaintext = "Data to encrypt";
-  auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
+  const std::string plaintext = "Data to encrypt";
+  auto block = encryptor.encrypt({reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size()});
 
   EncryptedContent content(block);
   auto ckPrefix = content.getKeyLocator();
@@ -147,8 +147,8 @@ BOOST_FIXTURE_TEST_CASE(KekRetrievalFailure, EncryptorFixture<false>)
   size_t nErrors = 0;
   onFailure.connect([&] (auto&&...) { ++nErrors; });
 
-  std::string plaintext = "Data to encrypt";
-  auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
+  const std::string plaintext = "Data to encrypt";
+  auto block = encryptor.encrypt({reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size()});
   advanceClocks(1_ms, 10);
 
   // check that KEK interests has been sent
@@ -204,8 +204,8 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
   std::cerr << "const std::vector<Block> encryptedBlobs = {\n";
   for (size_t i = 0; i < 3; ++i) {
     std::cerr << "  \"";
-    auto block = encryptor.encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size());
-    printHex(std::cerr, block.wireEncode().wire(), block.wireEncode().size(), true);
+    auto block = encryptor.encrypt({reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size()});
+    printHex(std::cerr, block.wireEncode(), true);
     std::cerr << "\"_block,\n";
 
     encryptor.regenerateCk();
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
   std::cerr << "const std::vector<Block> encryptorPackets = {\n";
   for (const auto& data : encryptor) {
     std::cerr << "  \"";
-    printHex(std::cerr, data.wireEncode().wire(), data.wireEncode().size(), true);
+    printHex(std::cerr, data.wireEncode(), true);
     std::cerr << "\"_block,\n";
   }
   std::cerr << "};\n\n";

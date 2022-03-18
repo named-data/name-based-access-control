@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -138,16 +138,6 @@ public:
 
   void
   wireDecode(const Block& wire);
-
-public:
-  bool
-  operator==(const EncryptedContent& rhs) const;
-
-  bool
-  operator!=(const EncryptedContent& rhs) const
-  {
-    return !(*this == rhs);
-  }
 
 private:
   Block m_iv;

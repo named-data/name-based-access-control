@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -100,7 +100,7 @@ Encryptor::regenerateCk()
     .append(CK)
     .appendVersion(); // version = ID of CK
   NDN_LOG_DEBUG("Generating new CK: " << m_ckName);
-  random::generateSecureBytes(m_ckBits.data(), m_ckBits.size());
+  random::generateSecureBytes(m_ckBits);
 
   // one implication: if CK updated before KEK fetched, KDK for the old CK will not be published
   if (!m_kek) {
@@ -112,17 +112,17 @@ Encryptor::regenerateCk()
 }
 
 EncryptedContent
-Encryptor::encrypt(const uint8_t* data, size_t size)
+Encryptor::encrypt(span<const uint8_t> data)
 {
   // Generate IV
   auto iv = make_shared<Buffer>(AES_IV_SIZE);
-  random::generateSecureBytes(iv->data(), iv->size());
+  random::generateSecureBytes(*iv);
 
   OBufferStream os;
-  security::transform::bufferSource(data, size)
+  security::transform::bufferSource(data)
     >> security::transform::blockCipher(BlockCipherAlgorithm::AES_CBC,
                                         CipherOperator::ENCRYPT,
-                                        m_ckBits.data(), m_ckBits.size(), iv->data(), iv->size())
+                                        m_ckBits, *iv)
     >> security::transform::streamSink(os);
 
   EncryptedContent content;
@@ -185,10 +185,10 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
 {
   try {
     PublicKey kek;
-    kek.loadPkcs8(m_kek->getContent().value(), m_kek->getContent().value_size());
+    kek.loadPkcs8(m_kek->getContent().value_bytes());
 
     EncryptedContent content;
-    content.setPayload(kek.encrypt(m_ckBits.data(), m_ckBits.size()));
+    content.setPayload(kek.encrypt(m_ckBits));
 
     auto ckData = make_shared<Data>(Name(m_ckName).append(ENCRYPTED_BY).append(m_kek->getName()));
     ckData->setContent(content.wireEncode());

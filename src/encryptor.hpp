@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2019, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -56,7 +56,7 @@ public:
   ~Encryptor();
 
   /**
-   * Synchronously encrypt supplied data
+   * @brief Synchronously encrypt supplied data
    *
    * If KEK has not been fetched already, this method will trigger async fetching of it.
    * After KEK successfully fetched, CK data will be automatically published.
@@ -72,7 +72,7 @@ public:
    * @return Encrypted content
    */
   EncryptedContent
-  encrypt(const uint8_t* data, size_t size);
+  encrypt(span<const uint8_t> data);
 
   /**
    * @brief Create a new content key and publish the corresponding CK data
@@ -84,8 +84,8 @@ public:
   regenerateCk();
 
 public: // accessor interface for published data packets
-
-  /** @return{ number of packets stored in in-memory storage }
+  /**
+   * @return number of packets stored in in-memory storage
    */
   size_t
   size() const
@@ -93,10 +93,10 @@ public: // accessor interface for published data packets
     return m_ims.size();
   }
 
-  /** @brief Returns begin iterator of the in-memory storage ordered by
-   *  name with digest
+  /**
+   * @brief Returns begin iterator of the in-memory storage ordered by name with digest
    *
-   *  @return{ const_iterator pointing to the beginning of m_cache }
+   * @return const_iterator pointing to the beginning of m_cache
    */
   InMemoryStorage::const_iterator
   begin() const
@@ -104,10 +104,10 @@ public: // accessor interface for published data packets
     return m_ims.begin();
   }
 
-  /** @brief Returns end iterator of the in-memory storage ordered by
-   *  name with digest
+  /**
+   * @brief Returns end iterator of the in-memory storage ordered by name with digest
    *
-   *  @return{ const_iterator pointing to the end of m_cache }
+   * @return const_iterator pointing to the end of m_cache
    */
   InMemoryStorage::const_iterator
   end() const
