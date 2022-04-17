@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml)
 [![Docs](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml)
-![Language](https://img.shields.io/badge/C%2B%2B-14-blue)
+![Language](https://img.shields.io/badge/C%2B%2B-17-blue)
 
 ## Reporting bugs
 

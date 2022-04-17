@@ -23,9 +23,7 @@
 
 #include <boost/filesystem.hpp>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 using namespace ndn::security;
 
@@ -40,30 +38,6 @@ KeyChainFixture::~KeyChainFixture()
   for (const auto& certFile : m_certFiles) {
     boost::filesystem::remove(certFile, ec); // ignore error
   }
-}
-
-Certificate
-KeyChainFixture::makeCert(const Key& key, const std::string& issuer, const Key& signingKey)
-{
-  Certificate cert;
-  cert.setName(Name(key.getName())
-               .append(issuer)
-               .appendVersion());
-
-  // set metainfo
-  cert.setContentType(tlv::ContentType_Key);
-  cert.setFreshnessPeriod(1_h);
-
-  // set content
-  cert.setContent(key.getPublicKey());
-
-  // set signature info
-  ndn::SignatureInfo info;
-  auto now = time::system_clock::now();
-  info.setValidityPeriod(ValidityPeriod(now - 30_days, now + 30_days));
-
-  m_keyChain.sign(cert, signingByKey(signingKey ? signingKey : key).setSignatureInfo(info));
-  return cert;
 }
 
 bool
@@ -114,6 +88,4 @@ KeyChainFixture::saveIdentityCert(const Name& identityName, const std::string& f
   return saveIdentityCert(id, filename);
 }
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

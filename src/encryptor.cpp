@@ -24,8 +24,7 @@
 #include <ndn-cxx/security/transform/stream-sink.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 NDN_LOG_INIT(nac.Encryptor);
 
@@ -207,5 +206,4 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
   }
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac

@@ -23,9 +23,11 @@
 #include "tests/io-key-chain-fixture.hpp"
 #include "tests/unit/static-data.hpp"
 
-#include <iostream>
+#include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
+
+#include <iostream>
 
 namespace ndn {
 namespace nac {

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,49 +20,49 @@
 #ifndef NDN_NAC_VERSION_HPP
 #define NDN_NAC_VERSION_HPP
 
-namespace ndn {
-namespace nac {
+// ndn-nac version follows Semantic Versioning 2.0.0
+// https://semver.org/spec/v2.0.0.html
 
-/** ndn-nac version follows Semantic Versioning 2.0.0 specification
- *  http://semver.org/
- */
-
-/** \brief ndn-nac version represented as an integer
+/**
+ * \brief ndn-nac version represented as an integer.
  *
- *  MAJOR*1000000 + MINOR*1000 + PATCH
+ * Equivalent to: #NDN_NAC_VERSION_MAJOR*1000000 + #NDN_NAC_VERSION_MINOR*1000 + #NDN_NAC_VERSION_PATCH
  */
 #define NDN_NAC_VERSION @VERSION@
 
-/** \brief ndn-nac version represented as a string
+/// The major version of ndn-nac
+#define NDN_NAC_VERSION_MAJOR @VERSION_MAJOR@
+/// The minor version of ndn-nac
+#define NDN_NAC_VERSION_MINOR @VERSION_MINOR@
+/// The patch version of ndn-nac
+#define NDN_NAC_VERSION_PATCH @VERSION_PATCH@
+
+/**
+ * \brief ndn-nac version represented as a string.
  *
- *  MAJOR.MINOR.PATCH
+ * Format:
+ * @code
+ * MAJOR.MINOR.PATCH
+ * @endcode
  */
 #define NDN_NAC_VERSION_STRING "@VERSION_STRING@"
 
-/** \brief ndn-nac version string, including git commit information, if ndn-nac is build from
- *         specific git commit
+/**
+ * \brief ndn-nac version string, including git commit information if ndn-nac is built from a
+ *        specific git commit.
  *
- * NDN_NAC_VERSION_BUILD_STRING is obtained using the following command (`ndn-nac-` prefix is
- * afterwards removed):
+ * #NDN_NAC_VERSION_BUILD_STRING is obtained using the following command (`ndn-nac-` prefix is
+ * afterwards removed): ``git describe --match 'ndn-nac-*'``
  *
- *    `git describe --match 'ndn-nac-*'`
+ * When ndn-nac is not built from git, #NDN_NAC_VERSION_BUILD_STRING equals #NDN_NAC_VERSION_STRING.
  *
- * When ndn-nac is built not from git, NDN_NAC_VERSION_BUILD_STRING equals NDN_NAC_VERSION_STRING
- *
+ * Format:
+ * @code
  * MAJOR.MINOR.PATCH(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
+ * @endcode
  *
- * Example, 0.1.0-rc1-1-g5c86570
+ * Example: 0.1.0-rc1-1-g5c86570
  */
 #define NDN_NAC_VERSION_BUILD_STRING "@VERSION_BUILD@"
-
-/// MAJOR version
-#define NDN_NAC_VERSION_MAJOR @VERSION_MAJOR@
-/// MINOR version
-#define NDN_NAC_VERSION_MINOR @VERSION_MINOR@
-/// PATCH version
-#define NDN_NAC_VERSION_PATCH @VERSION_PATCH@
-
-} // namespace nac
-} // namespace ndn
 
 #endif // NDN_NAC_VERSION_HPP

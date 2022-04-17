@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * This file is part of NAC (Name-Based Access Control for NDN).
  * See AUTHORS.md for complete list of NAC authors and contributors.
@@ -21,16 +21,14 @@
 
 #include "tests/boost-test.hpp"
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 BOOST_AUTO_TEST_SUITE(TestCommon)
 
 BOOST_AUTO_TEST_CASE(Helpers)
 {
   bool hasFailed = false;
-  auto onFailed = [&] (auto...) { hasFailed = true; };
+  auto onFailed = [&] (auto&&...) { hasFailed = true; };
 
   auto kdkPrefix = convertKekNameToKdkPrefix(Name("/access/prefix/NAC/dataset/KEK/id"), onFailed);
 
@@ -62,6 +60,4 @@ BOOST_AUTO_TEST_CASE(Helpers)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

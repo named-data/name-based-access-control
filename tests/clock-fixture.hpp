@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -22,11 +22,10 @@
 
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
-/** \brief A test fixture that overrides steady clock and system clock.
+/**
+ * \brief A test fixture that overrides steady clock and system clock.
  */
 class ClockFixture
 {
@@ -78,8 +77,6 @@ protected:
   shared_ptr<time::UnitTestSystemClock> m_systemClock;
 };
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests
 
 #endif // NAC_TESTS_CLOCK_FIXTURE_HPP

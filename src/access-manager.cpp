@@ -23,10 +23,9 @@
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
-NDN_LOG_INIT(nac.AccessManager);
+namespace ndn::nac {
 
-namespace ndn {
-namespace nac {
+NDN_LOG_INIT(nac.AccessManager);
 
 AccessManager::AccessManager(const Identity& identity, const Name& dataset,
                              KeyChain& keyChain, Face& face)
@@ -123,5 +122,4 @@ AccessManager::removeMember(const Name& identity)
   m_ims.erase(Name(m_nacKey.getName()).append(KDK).append(ENCRYPTED_BY).append(identity));
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac

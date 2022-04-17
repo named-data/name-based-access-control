@@ -23,13 +23,12 @@
 #include "common.hpp"
 #include "encrypted-content.hpp"
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 /**
  * @brief NAC Encryptor
  *
- * Encryptor encrypts the requested content and returns ``EncryptedContent`` element.
+ * Encryptor encrypts the requested content and returns an EncryptedContent element.
  */
 class Encryptor
 {
@@ -135,7 +134,7 @@ NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   SigningInfo m_ckDataSigningInfo;
 
   bool m_isKekRetrievalInProgress;
-  optional<Data> m_kek;
+  std::optional<Data> m_kek;
   ErrorCallback m_onFailure;
 
   InMemoryStoragePersistent m_ims; // for encrypted CKs
@@ -147,7 +146,6 @@ NAC_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Scheduler m_scheduler;
 };
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac
 
 #endif // NDN_NAC_ENCRYPTOR_HPP

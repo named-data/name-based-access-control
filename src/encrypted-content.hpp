@@ -24,23 +24,22 @@
 
 #include <ndn-cxx/encoding/tlv.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 /**
  * @brief Encrypted content
  *
- * <code>
- *     EncryptedContent ::= ENCRYPTED-CONTENT-TYPE TLV-LENGTH
- *                            InitializationVector
- *                            EncryptedPayload
- *                            EncryptedPayloadKey
- *                            Name
+ * @verbatim
+ * EncryptedContent ::= ENCRYPTED-CONTENT-TYPE TLV-LENGTH
+ *                        InitializationVector
+ *                        EncryptedPayload
+ *                        EncryptedPayloadKey
+ *                        Name
  *
- *     InitializationVector ::= INITIALIZATION-VECTOR-TYPE TLV-LENGTH(=N) BYTE{N}
- *     EncryptedPayload ::= ENCRYPTED-PAYLOAD-TYPE TLV-LENGTH(=N) BYTE{N}
- *     EncryptedPayloadKey ::= ENCRYPTED-PAYLOAD-KEY-TYPE TLV-LENGTH(=N) BYTE{N}
- * </code>
+ * InitializationVector ::= INITIALIZATION-VECTOR-TYPE TLV-LENGTH(=N) BYTE{N}
+ * EncryptedPayload ::= ENCRYPTED-PAYLOAD-TYPE TLV-LENGTH(=N) BYTE{N}
+ * EncryptedPayloadKey ::= ENCRYPTED-PAYLOAD-KEY-TYPE TLV-LENGTH(=N) BYTE{N}
+ * @endverbatim
  */
 class EncryptedContent
 {
@@ -149,7 +148,6 @@ private:
   mutable Block m_wire;
 };
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac
 
 #endif // NDN_NAC_ENCRYPTED_CONTENT_HPP

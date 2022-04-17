@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -63,8 +63,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 using security::Certificate;
 using security::DataValidationFailureCallback;
@@ -151,7 +150,6 @@ convertKekNameToKdkPrefix(const Name& kekName, const ErrorCallback& onFailure);
 std::tuple<Name, Name, Name>
 extractKdkInfoFromCkName(const Name& ckDataName, const Name& ckName, const ErrorCallback& onFailure);
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac
 
 #endif // NDN_NAC_COMMON_HPP

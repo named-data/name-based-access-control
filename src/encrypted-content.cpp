@@ -23,12 +23,11 @@
 #include <ndn-cxx/util/concepts.hpp>
 #include <ndn-cxx/util/exception.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 BOOST_CONCEPT_ASSERT((WireEncodable<EncryptedContent>));
 BOOST_CONCEPT_ASSERT((WireDecodable<EncryptedContent>));
-static_assert(std::is_base_of<ndn::tlv::Error, EncryptedContent::Error>::value,
+static_assert(std::is_base_of_v<ndn::tlv::Error, EncryptedContent::Error>,
               "EncryptedContent::Error must inherit from tlv::Error");
 
 EncryptedContent::EncryptedContent(const Block& block)
@@ -183,18 +182,13 @@ EncryptedContent::wireDecode(const Block& wire)
   if (!wire.hasWire()) {
     NDN_THROW(Error("The supplied block does not contain wire format"));
   }
+  if (wire.type() != tlv::EncryptedContent) {
+    NDN_THROW(Error("EncryptedContent", wire.type()));
+  }
 
-  m_payload.reset();
-  m_iv.reset();
-  m_payloadKey.reset();
-
+  *this = {};
   m_wire = wire;
   m_wire.parse();
-
-  if (m_wire.type() != tlv::EncryptedContent) {
-    NDN_THROW(Error("Unexpected TLV type (expecting EncryptedContent, got " +
-                    ndn::to_string(m_wire.type()) + ")"));
-  }
 
   auto block = m_wire.find(tlv::EncryptedPayload);
   if (block != m_wire.elements_end()) {
@@ -220,5 +214,4 @@ EncryptedContent::wireDecode(const Block& wire)
   }
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac

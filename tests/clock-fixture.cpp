@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -19,9 +19,7 @@
 
 #include "tests/clock-fixture.hpp"
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 ClockFixture::ClockFixture()
   : m_steadyClock(make_shared<time::UnitTestSteadyClock>())
@@ -51,6 +49,4 @@ ClockFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
   }
 }
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

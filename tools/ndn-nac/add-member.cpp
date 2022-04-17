@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2020, Regents of the University of California
+/*
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -20,8 +20,7 @@
 #include "ndn-nac.hpp"
 #include "access-manager.hpp"
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 int
 nac_add_member(int argc, char** argv)
@@ -103,5 +102,4 @@ nac_add_member(int argc, char** argv)
   }
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac

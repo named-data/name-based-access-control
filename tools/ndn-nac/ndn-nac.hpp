@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2021, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -32,8 +32,7 @@
 #include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/io.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 int
 nac_dump_kek(int argc, char** argv);
@@ -61,7 +60,6 @@ loadCertificate(const std::string& fileName)
   }
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac
 
 #endif // NAC_TOOLS_NDN_NAC_NDN_NAC_HPP

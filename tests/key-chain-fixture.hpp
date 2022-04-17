@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -21,11 +21,8 @@
 #define NAC_TESTS_KEY_CHAIN_FIXTURE_HPP
 
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/security/signing-helpers.hpp>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 /**
  * @brief A fixture providing an in-memory KeyChain.
@@ -41,16 +38,6 @@ protected:
   using Key         = ndn::security::Key;
 
 public:
-  /**
-   * @brief Creates and returns a certificate for a given key
-   * @param key The key for which to make a certificate
-   * @param issuer The IssuerId to include in the certificate name
-   * @param signingKey The key with which to sign the certificate; if not provided, the
-   *                   certificate will be self-signed
-   */
-  Certificate
-  makeCert(const Key& key, const std::string& issuer, const Key& signingKey = Key());
-
   /**
    * @brief Saves an NDN certificate to a file
    * @return true if successful, false otherwise
@@ -88,8 +75,6 @@ private:
   std::vector<std::string> m_certFiles;
 };
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests
 
 #endif // NAC_TESTS_KEY_CHAIN_FIXTURE_HPP

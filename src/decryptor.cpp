@@ -25,8 +25,7 @@
 #include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
-namespace ndn {
-namespace nac {
+namespace ndn::nac {
 
 NDN_LOG_INIT(nac.Decryptor);
 
@@ -72,9 +71,7 @@ Decryptor::decrypt(const Block& encryptedContent,
                      "Missing required InitialVector in the supplied EncryptedContent block");
   }
 
-  ContentKeys::iterator ck;
-  bool isNew = false;
-  std::tie(ck, isNew) = m_cks.emplace(ec.getKeyLocator(), ContentKey{});
+  auto [ck, isNew] = m_cks.emplace(ec.getKeyLocator(), ContentKey{});
 
   if (ck->second.isRetrieved) {
     doDecrypt(ec, ck->second.bits, onSuccess, onFailure);
@@ -101,17 +98,15 @@ Decryptor::fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, siz
   //   from the encrypted data          unknown (name in retrieved CK is used to determine KDK)
 
   const Name& ckName = ck->first;
-
   NDN_LOG_DEBUG("Fetching CK " << ckName);
 
   ck->second.pendingInterest = m_face.expressInterest(Interest(ckName)
                                                        .setMustBeFresh(false) // ?
                                                        .setCanBePrefix(true),
     [=] (const Interest& ckInterest, const Data& ckData) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       // TODO: verify that the key is legit
-      Name kdkPrefix, kdkIdentity, kdkKeyName;
-      std::tie(kdkPrefix, kdkIdentity, kdkKeyName) =
+      auto [kdkPrefix, kdkIdentity, kdkKeyName] =
         extractKdkInfoFromCkName(ckData.getName(), ckInterest.getName(), onFailure);
       if (kdkPrefix.empty()) {
         return; // error has been already reported
@@ -131,13 +126,13 @@ Decryptor::fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, siz
       fetchKdk(ck, kdkPrefix, ckData, onFailure, N_RETRIES);
     },
     [=] (const Interest& i, const lp::Nack& nack) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       onFailure(ErrorCode::CkRetrievalFailure,
                 "Retrieval of CK [" + i.getName().toUri() + "] failed. "
                 "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
     },
     [=] (const Interest& i) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       if (nTriesLeft > 1) {
         fetchCk(ck, onFailure, nTriesLeft - 1);
       }
@@ -167,7 +162,7 @@ Decryptor::fetchKdk(ContentKeys::iterator ck, const Name& kdkPrefix, const Data&
 
   ck->second.pendingInterest = m_face.expressInterest(Interest(kdkName).setMustBeFresh(true),
     [=] (const Interest&, const Data& kdkData) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       // TODO: verify that the key is legit
 
       bool isOk = decryptAndImportKdk(kdkData, onFailure);
@@ -178,13 +173,13 @@ Decryptor::fetchKdk(ContentKeys::iterator ck, const Name& kdkPrefix, const Data&
                                          onFailure);
     },
     [=] (const Interest& i, const lp::Nack& nack) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       onFailure(ErrorCode::KdkRetrievalFailure,
                 "Retrieval of KDK [" + i.getName().toUri() + "] failed. "
                 "Got NACK (" + boost::lexical_cast<std::string>(nack.getReason()) + ")");
     },
     [=] (const Interest& i) {
-      ck->second.pendingInterest = nullopt;
+      ck->second.pendingInterest = std::nullopt;
       if (nTriesLeft > 1) {
         fetchKdk(ck, kdkPrefix, ckData, onFailure, nTriesLeft - 1);
       }
@@ -264,5 +259,4 @@ Decryptor::doDecrypt(const EncryptedContent& content, const Buffer& ckBits,
   onSuccess(os.buf());
 }
 
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac
