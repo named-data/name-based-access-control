@@ -50,6 +50,7 @@ public:
   run()
   {
     Interest interest(Name("/example/testApp/randomData"));
+    interest.setCanBePrefix(true);
     interest.setMustBeFresh(true);
     interest.setInterestLifetime(3_s); // 3 seconds
 
