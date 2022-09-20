@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2022, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -27,8 +27,8 @@
 #include "tests/io-key-chain-fixture.hpp"
 #include "tests/unit/static-data.hpp"
 
-#include <iostream>
 #include <boost/mpl/vector.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace ndn {
@@ -85,7 +85,7 @@ public:
 
 public:
   util::DummyClientFace face;
-  ValidatorNull validator;
+  security::ValidatorNull validator;
   Decryptor decryptor;
 };
 

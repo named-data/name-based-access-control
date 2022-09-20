@@ -24,6 +24,7 @@
 #include "tests/unit/static-data.hpp"
 
 #include <ndn-cxx/security/signing-helpers.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
 
@@ -91,7 +92,7 @@ public:
 
 public:
   util::DummyClientFace face;
-  ValidatorNull validator;
+  security::ValidatorNull validator;
   Encryptor encryptor;
   util::Signal<EncryptorFixture, ErrorCode, std::string> onFailure;
 };

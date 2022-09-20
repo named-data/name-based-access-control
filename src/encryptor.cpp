@@ -23,12 +23,15 @@
 #include <ndn-cxx/security/transform/buffer-source.hpp>
 #include <ndn-cxx/security/transform/stream-sink.hpp>
 #include <ndn-cxx/util/logger.hpp>
+#include <ndn-cxx/util/random.hpp>
+
+#include <boost/lexical_cast.hpp>
 
 namespace ndn::nac {
 
 NDN_LOG_INIT(nac.Encryptor);
 
-const size_t N_RETRIES = 3;
+constexpr size_t N_RETRIES = 3;
 
 Encryptor::Encryptor(const Name& accessPrefix,
                      const Name& ckPrefix, SigningInfo ckDataSigningInfo,

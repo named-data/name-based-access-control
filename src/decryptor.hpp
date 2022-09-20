@@ -23,7 +23,8 @@
 #include "common.hpp"
 #include "encrypted-content.hpp"
 
-#include <ndn-cxx/face.hpp>
+#include <list>
+#include <map>
 
 namespace ndn::nac {
 
@@ -37,6 +38,24 @@ class Decryptor
 {
 public:
   using DecryptSuccessCallback = std::function<void(ConstBufferPtr)>;
+
+  /**
+   * @brief Constructor
+   * @param credentialsKey Credentials key to be used to retrieve and decrypt KDK
+   * @param validator Validation policy to ensure validity of KDK and CK
+   * @param keyChain  KeyChain
+   * @param face      Face that will be used to fetch CK and KDK
+   */
+  Decryptor(const Key& credentialsKey, Validator& validator, KeyChain& keyChain, Face& face);
+
+  ~Decryptor();
+
+  /**
+   * @brief Asynchronously decrypt @p encryptedContent
+   */
+  void
+  decrypt(const Block& encryptedContent,
+          const DecryptSuccessCallback& onSuccess, const ErrorCallback& onFailure);
 
 private:
   struct ContentKey
@@ -56,25 +75,6 @@ private:
 
   using ContentKeys = std::map<Name, ContentKey>;
 
-public:
-  /**
-   * @brief Constructor
-   * @param credentialsKey Credentials key to be used to retrieve and decrypt KDK
-   * @param validator Validation policy to ensure validity of KDK and CK
-   * @param keyChain  KeyChain
-   * @param face      Face that will be used to fetch CK and KDK
-   */
-  Decryptor(const Key& credentialsKey, Validator& validator, KeyChain& keyChain, Face& face);
-
-  ~Decryptor();
-
-  /**
-   * @brief Asynchronously decrypt @p encryptedContent
-   */
-  void
-  decrypt(const Block& encryptedContent, const DecryptSuccessCallback& onSuccess, const ErrorCallback& onFailure);
-
-private:
   void
   fetchCk(ContentKeys::iterator ck, const ErrorCallback& onFailure, size_t nTriesLeft);
 
@@ -91,9 +91,9 @@ private:
                                      const ErrorCallback& onFailure);
 
   /**
-   * @brief Synchronously decrypt (assume CK exists)
+   * @brief Synchronously decrypt
    */
-  void
+  static void
   doDecrypt(const EncryptedContent& encryptedContent, const Buffer& ckBits,
             const DecryptSuccessCallback& onSuccess,
             const ErrorCallback& onFailure);
@@ -106,7 +106,7 @@ private:
   KeyChain m_internalKeyChain; // internal in-memory keychain for temporarily storing KDKs
 
   // a set of Content Keys
-  // @TODO add some expiration, so they are not stored forever
+  // TODO: add some expiration, so they are not stored forever
   ContentKeys m_cks;
 };
 

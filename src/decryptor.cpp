@@ -25,11 +25,13 @@
 #include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 namespace ndn::nac {
 
 NDN_LOG_INIT(nac.Decryptor);
 
-const size_t N_RETRIES = 3;
+constexpr size_t N_RETRIES = 3;
 
 Decryptor::Decryptor(const Key& credentialsKey, Validator& validator, KeyChain& keyChain, Face& face)
   : m_credentialsKey(credentialsKey)

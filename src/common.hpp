@@ -34,34 +34,24 @@
 #define NAC_PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
-#include <cstddef>
-#include <list>
-#include <map>
-#include <queue>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#include <functional>
+#include <stdexcept>
 
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/ims/in-memory-storage-persistent.hpp>
 #include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/security/certificate.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/signing-info.hpp>
 #include <ndn-cxx/security/transform/public-key.hpp>
 #include <ndn-cxx/security/validation-callback.hpp>
 #include <ndn-cxx/security/validation-error.hpp>
-#include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/security/validator.hpp>
-#include <ndn-cxx/util/random.hpp>
-#include <ndn-cxx/util/signal.hpp>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/assert.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/noncopyable.hpp>
+#include <boost/core/noncopyable.hpp>
 
 namespace ndn::nac {
 
@@ -74,11 +64,11 @@ using security::SafeBag;
 using security::SigningInfo;
 using security::ValidationError;
 using security::Validator;
-using security::ValidatorNull;
 using security::extractKeyNameFromCertName;
 using security::transform::PublicKey;
 
 namespace tlv {
+
 using namespace ndn::tlv;
 
 enum {
@@ -90,21 +80,21 @@ enum {
 
 } // namespace tlv
 
-const name::Component ENCRYPTED_BY("ENCRYPTED-BY");
-const name::Component NAC("NAC");
-const name::Component KEK("KEK");
-const name::Component KDK("KDK");
-const name::Component CK("CK");
+inline const name::Component ENCRYPTED_BY{"ENCRYPTED-BY"};
+inline const name::Component NAC{"NAC"};
+inline const name::Component KEK{"KEK"};
+inline const name::Component KDK{"KDK"};
+inline const name::Component CK{"CK"};
 
-const size_t AES_KEY_SIZE = 32;
-const size_t AES_IV_SIZE = 16;
+inline constexpr size_t AES_KEY_SIZE = 32;
+inline constexpr size_t AES_IV_SIZE = 16;
 
-const time::seconds DEFAULT_KEK_FRESHNESS_PERIOD = 1_h;
-const time::seconds DEFAULT_KDK_FRESHNESS_PERIOD = 1_h;
-const time::seconds DEFAULT_CK_FRESHNESS_PERIOD = 1_h;
+inline constexpr time::seconds DEFAULT_KEK_FRESHNESS_PERIOD = 1_h;
+inline constexpr time::seconds DEFAULT_KDK_FRESHNESS_PERIOD = 1_h;
+inline constexpr time::seconds DEFAULT_CK_FRESHNESS_PERIOD = 1_h;
 
-const time::seconds RETRY_DELAY_AFTER_NACK = 1_s;
-const time::seconds RETRY_DELAY_KEK_RETRIEVAL = 60_s;
+inline constexpr time::seconds RETRY_DELAY_AFTER_NACK = 1_s;
+inline constexpr time::seconds RETRY_DELAY_KEK_RETRIEVAL = 60_s;
 
 enum class ErrorCode {
   KekRetrievalFailure = 1,
