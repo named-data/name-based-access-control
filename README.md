@@ -1,4 +1,4 @@
-# NAC: Named-Based Access Control Library for NDN
+# NAC: Name-Based Access Control Library for NDN
 
 [![CI](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/ci.yml)
 [![Docs](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/name-based-access-control/actions/workflows/docs.yml)
