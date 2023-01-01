@@ -10,7 +10,7 @@ import sys
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'NAC: Name-based Access Control library'
-copyright = 'Copyright © 2014-2022 Regents of the University of California.'
+copyright = 'Copyright © 2014-2023 Regents of the University of California.'
 author = 'Named Data Networking Project'
 
 # The short X.Y version.
