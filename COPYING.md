@@ -1,10 +1,10 @@
-NAC library is licensed under the terms of the GNU Lesser General Public License,
+NAC is licensed under the terms of the GNU Lesser General Public License,
 version 3 or later.
 
-NAC library relies on third-party software, licensed under the following licenses:
+NAC relies on third-party software, licensed under the following licenses:
 
-- ndn-cxx library is licensed under the terms of the GNU Lesser General Public License,
-  version 3 or later.
+- ndn-cxx is licensed under the terms of the
+  [GNU Lesser General Public License version 3](https://github.com/named-data/ndn-cxx/blob/master/COPYING.md)
 
 - The Boost libraries are licensed under the
   [Boost Software License 1.0](https://www.boost.org/users/license.html)
@@ -12,9 +12,8 @@ NAC library relies on third-party software, licensed under the following license
 - The waf build system is licensed under the terms of the
   [BSD license](https://github.com/named-data/name-based-access-control/blob/new/waf)
 
-
 The LGPL and GPL licenses are provided below in this file.  For more information
-about these licenses, see https://www.gnu.org/licenses/
+about these licenses, see <https://www.gnu.org/licenses/>
 
 --------------------------------------------------------------------------------
 

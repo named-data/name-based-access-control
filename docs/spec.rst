@@ -44,7 +44,6 @@ optional EncryptedPayloadKey, and Name elements.
      InitializationVector = INITIALIZATION-VECTOR-TYPE TLV-LENGTH *OCTET
      EncryptedPayloadKey = ENCRYPTED-PAYLOAD-KEY-TYPE TLV-LENGTH *OCTET
 
-
 Access Manager
 --------------
 
@@ -67,7 +66,6 @@ KEK is published as a single data packet with name ``/[access-namespace]/NAC/[da
    KekContent = CONTENT-TYPE-TLV TLV-LENGTH
                 *OCTET ; = BER of public key /[access-namespace]/NAC/[dataset]/KEY/[key-id]
 
-
 Different versions of KDK are published, encrypted by the public key of the individual authorized member, following naming convention: ``/[access-namespace]/NAC/[dataset]/KDK/[key-id]/ENCRYPTED-BY/<authorized-member>/KEY/[member-key-id]``.  KDK is published in the following format:
 
 .. code-block:: abnf
@@ -83,7 +81,7 @@ Different versions of KDK are published, encrypted by the public key of the indi
 
 Within the ``EncryptedContent`` element,
 
-* ``EncryptedPayload`` contains `SafeBag <https://named-data.net/doc/ndn-cxx/0.7.1/specs/safe-bag.html>`__ of private key ``/[access-namespace]/NAC/[dataset]/KEY/[key-id]``
+* ``EncryptedPayload`` contains `SafeBag <https://docs.named-data.net/ndn-cxx/0.8.1/specs/safe-bag.html>`__ of private key ``/[access-namespace]/NAC/[dataset]/KEY/[key-id]``
 * ``EncryptedPayloadKey`` contains password for SafeBag, encrypted by public key ``/<authorized-member>/KEY/[member-key-id]``
 * ``InitializationVector`` and ``Name`` must be omitted
 
@@ -122,7 +120,6 @@ Within the ``EncryptedContent`` element,
 * ``EncryptedPayload`` contains ContentKey encrypted by public key ``/[access-namespace]/NAC/[dataset]/KEK/[key-id]``
 * ``EncryptedPayloadKey``, ``InitializationVector``, and ``Name`` must be omitted
 
-
 Decryptor
 ---------
 
@@ -135,15 +132,15 @@ Encryptor decrypts (asynchronous operation, contingent on successful retrieval o
 TLV-TYPE number assignments
 ---------------------------
 
-+---------------------------------------------+------------------+-----------------+
-| Type                                        | Assigned number  | Assigned number |
-|                                             | (decimal)        | (hexadecimal)   |
-+=============================================+==================+=================+
-| EncryptedContent                            | 130              | 0x82            |
-+---------------------------------------------+------------------+-----------------+
-| EncryptedPayload                            | 132              | 0x84            |
-+---------------------------------------------+------------------+-----------------+
-| InitializationVector                        | 133              | 0x85            |
-+---------------------------------------------+------------------+-----------------+
-| EncryptedPayloadKey                         | 134              | 0x86            |
-+---------------------------------------------+------------------+-----------------+
++----------------------------------------+------------------+------------------+
+| Type                                   | Assigned number  | Assigned number  |
+|                                        | (decimal)        | (hexadecimal)    |
++========================================+==================+==================+
+| EncryptedContent                       | 130              | 0x82             |
++----------------------------------------+------------------+------------------+
+| EncryptedPayload                       | 132              | 0x84             |
++----------------------------------------+------------------+------------------+
+| InitializationVector                   | 133              | 0x85             |
++----------------------------------------+------------------+------------------+
+| EncryptedPayloadKey                    | 134              | 0x86             |
++----------------------------------------+------------------+------------------+
