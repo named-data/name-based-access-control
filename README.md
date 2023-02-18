@@ -11,8 +11,8 @@ Please submit any bug reports or feature requests to the
 
 ## Contributing
 
-We greatly appreciate contributions to the NAC code base, provided that they are
-licensed under the GNU LGPL version 3 or a compatible license.
+Contributions to NAC are greatly appreciated and can be made through our
+[Gerrit code review site](https://gerrit.named-data.net/).
 If you are new to the NDN software community, please read our [Contributor's Guide](
 https://github.com/named-data/.github/blob/main/CONTRIBUTING.md) to get started.
 
