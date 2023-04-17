@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -28,10 +28,10 @@
 // Enclosing code in ndn simplifies coding (can also use `using namespace ndn`)
 namespace ndn {
 namespace nac {
-// Additional nested namespaces can be used to prevent/limit name conflicts
+// Additional nested namespaces should be used to prevent/limit name conflicts
 namespace examples {
 
-class Consumer : noncopyable
+class Consumer
 {
 public:
   Consumer()
@@ -49,6 +49,8 @@ public:
   void
   run()
   {
+    using namespace std::placeholders;
+
     Interest interest(Name("/example/testApp/randomData"));
     interest.setCanBePrefix(true);
     interest.setMustBeFresh(true);

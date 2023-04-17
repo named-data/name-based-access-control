@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -30,10 +30,10 @@
 // Enclosing code in ndn simplifies coding (can also use `using namespace ndn`)
 namespace ndn {
 namespace nac {
-// Additional nested namespaces can be used to prevent/limit name conflicts
+// Additional nested namespaces should be used to prevent/limit name conflicts
 namespace examples {
 
-class Producer : noncopyable
+class Producer
 {
 public:
   Producer()
@@ -59,50 +59,46 @@ public:
     m_accessManager.addMember(m_keyChain.getPib().getDefaultIdentity().getDefaultKey().getDefaultCertificate());
 
     m_face.setInterestFilter("/example/testApp",
-                             std::bind(&Producer::onInterest, this, _1, _2),
+                             std::bind(&Producer::onInterest, this, std::placeholders::_2),
                              nullptr, // RegisterPrefixSuccessCallback is optional
-                             std::bind(&Producer::onRegisterFailed, this, _1, _2));
+                             [this] (const Name& prefix, const std::string& reason) {
+                               std::cerr << "ERROR: Failed to register prefix '" << prefix
+                                         << "' with the local forwarder (" << reason << ")\n";
+                               m_face.shutdown();
+                             });
     m_face.processEvents();
   }
 
 private:
   void
-  onInterest(const InterestFilter&, const Interest& interest)
+  onInterest(const Interest& interest)
   {
-    std::cout << "<< I: " << interest << std::endl;
+    std::cout << ">> I: " << interest << std::endl;
 
-    // Create new name, based on Interest's name
+    // Create a new name for the Data packet, based on the Interest's name
     Name dataName(interest.getName());
     dataName
       .append("testApp") // add "testApp" component to Interest name
-      .appendVersion();  // add "version" component (current UNIX timestamp in milliseconds)
+      .appendVersion();  // add version component (current UNIX timestamp in milliseconds)
 
     // Create Data packet
     auto data = std::make_shared<Data>();
     data->setName(dataName);
     data->setFreshnessPeriod(10_s); // 10 seconds
 
-    static const std::string content = "HELLO KITTY";
+    constexpr std::string_view content{"Hello, world!"};
     auto blob = m_encryptor.encrypt({reinterpret_cast<const uint8_t*>(content.data()), content.size()});
     data->setContent(blob.wireEncode());
 
     // Sign Data packet with default identity
     m_keyChain.sign(*data);
-    // m_keyChain.sign(data, <identityName>);
-    // m_keyChain.sign(data, <certificate>);
+    // m_keyChain.sign(*data, signingByIdentity(<identityName>));
+    // m_keyChain.sign(*data, signingByKey(<keyName>));
+    // m_keyChain.sign(*data, signingByCertificate(<certName>));
 
     // Return Data packet to the requester
-    std::cout << ">> D: " << *data << std::endl;
+    std::cout << "<< D: " << *data << std::endl;
     m_face.put(*data);
-  }
-
-
-  void
-  onRegisterFailed(const Name& prefix, const std::string& reason)
-  {
-    std::cerr << "ERROR: Failed to register prefix '" << prefix
-              << "' with the local forwarder (" << reason << ")" << std::endl;
-    m_face.shutdown();
   }
 
 private:
