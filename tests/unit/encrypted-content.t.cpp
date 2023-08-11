@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2020, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * This file is part of NAC (Name-Based Access Control for NDN).
  * See AUTHORS.md for complete list of NAC authors and contributors.
@@ -21,9 +21,7 @@
 
 #include "tests/boost-test.hpp"
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 class EncryptedContentFixture
 {
@@ -158,6 +156,4 @@ BOOST_AUTO_TEST_SUITE_END() // SetterGetter
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

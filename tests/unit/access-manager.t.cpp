@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -26,9 +26,7 @@
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 class AccessManagerFixture : public IoKeyChainFixture
 {
@@ -50,7 +48,7 @@ public:
   }
 
 public:
-  util::DummyClientFace face;
+  DummyClientFace face;
   Identity accessIdentity;
   Identity nacIdentity;
   std::vector<Identity> userIdentities;
@@ -135,6 +133,4 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

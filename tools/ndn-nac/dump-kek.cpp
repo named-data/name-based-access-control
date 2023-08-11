@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -73,7 +73,7 @@ nac_dump_kek(int argc, char** argv)
     KeyChain keyChain;
     Identity id = keyChain.getPib().getIdentity(identityName);
 
-    util::DummyClientFace face(keyChain); // to avoid any real IO
+    DummyClientFace face(keyChain); // to avoid any real IO
     AccessManager manager(id, datasetName, keyChain, face);
 
     if (manager.size() != 1) {

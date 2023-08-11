@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -30,9 +30,7 @@
 
 #include <iostream>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 class EncryptorStaticDataEnvironment : public IoKeyChainFixture
 {
@@ -67,7 +65,7 @@ public:
   }
 
 protected:
-  util::DummyClientFace m_imsFace{m_io, m_keyChain, {true, true}};
+  DummyClientFace m_imsFace{m_io, m_keyChain, {true, true}};
 
 private:
   InMemoryStoragePersistent m_ims;
@@ -91,10 +89,10 @@ public:
   }
 
 public:
-  util::DummyClientFace face;
+  DummyClientFace face;
   security::ValidatorNull validator;
   Encryptor encryptor;
-  util::Signal<EncryptorFixture, ErrorCode, std::string> onFailure;
+  signal::Signal<EncryptorFixture, ErrorCode, std::string> onFailure;
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestEncryptor, EncryptorFixture<>)
@@ -227,6 +225,4 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests

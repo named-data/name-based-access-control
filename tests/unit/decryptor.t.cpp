@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2023, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -31,9 +31,7 @@
 #include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
-namespace ndn {
-namespace nac {
-namespace tests {
+namespace ndn::nac::tests {
 
 class DecryptorStaticDataEnvironment : public IoKeyChainFixture
 {
@@ -65,7 +63,7 @@ public:
   }
 
 protected:
-  util::DummyClientFace m_imsFace{m_io, m_keyChain, {false, true}};
+  DummyClientFace m_imsFace{m_io, m_keyChain, {false, true}};
 
 private:
   InMemoryStoragePersistent m_ims;
@@ -84,7 +82,7 @@ public:
   }
 
 public:
-  util::DummyClientFace face;
+  DummyClientFace face;
   security::ValidatorNull validator;
   Decryptor decryptor;
 };
@@ -130,6 +128,4 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(DecryptSuccess, T, Identities, DecryptorFixture
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace tests
-} // namespace nac
-} // namespace ndn
+} // namespace ndn::nac::tests
