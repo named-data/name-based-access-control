@@ -15,11 +15,13 @@ def options(opt):
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
-    optgrp = opt.add_option_group('NDN-NAC Options')
+    optgrp = opt.add_option_group('NAC Options')
     optgrp.add_option('--with-examples', action='store_true', default=False,
                       help='Build examples')
     optgrp.add_option('--with-tests', action='store_true', default=False,
                       help='Build unit tests')
+    optgrp.add_option('--without-tools', action='store_false', default=True, dest='with_tools',
+                      help='Do not build tools')
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
@@ -28,6 +30,7 @@ def configure(conf):
 
     conf.env.WITH_EXAMPLES = conf.options.with_examples
     conf.env.WITH_TESTS = conf.options.with_tests
+    conf.env.WITH_TOOLS = conf.options.with_tools
 
     conf.find_program('dot', mandatory=False)
 
@@ -91,10 +94,11 @@ def build(bld):
         includes=['src', '.'],
         export_includes=['src', '.'])
 
-    bld.recurse('tools')
-
     if bld.env.WITH_TESTS:
         bld.recurse('tests')
+
+    if bld.env.WITH_TOOLS:
+        bld.recurse('tools')
 
     if bld.env.WITH_EXAMPLES:
         bld.recurse('examples')
