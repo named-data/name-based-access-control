@@ -1,7 +1,8 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-from waflib import Context, Logs, Utils
-import os, subprocess
+import os
+import subprocess
+from waflib import Context, Logs
 
 VERSION = '0.1.0'
 APPNAME = 'ndn-nac'
@@ -70,7 +71,7 @@ def build(bld):
         name='version.hpp',
         source='src/version.hpp.in',
         target='src/version.hpp',
-        install_path=None,
+        install_path='${INCLUDEDIR}/ndn-nac',
         VERSION_STRING=VERSION_BASE,
         VERSION_BUILD=VERSION,
         VERSION=int(VERSION_SPLIT[0]) * 1000000 +
@@ -98,17 +99,9 @@ def build(bld):
     if bld.env.WITH_EXAMPLES:
         bld.recurse('examples')
 
-    bld.install_files(
-        dest = '%s/ndn-nac' % bld.env.INCLUDEDIR,
-        files = bld.path.ant_glob(['src/*.hpp', 'common.hpp']),
-        cwd = bld.path.find_dir('src'),
-        relative_trick = False)
-
-    bld.install_files(
-        dest = '%s/ndn-nac' % bld.env.INCLUDEDIR,
-        files = bld.path.get_bld().ant_glob(['src/*.hpp', 'common.hpp', 'config.hpp']),
-        cwd = bld.path.get_bld().find_dir('src'),
-        relative_trick = False)
+    # Install header files
+    bld.install_files('${INCLUDEDIR}/ndn-nac', bld.path.find_dir('src').ant_glob('*.hpp'))
+    bld.install_files('${INCLUDEDIR}/ndn-nac', bld.path.find_resource('config.hpp'))
 
     bld(features='subst',
         source='libndn-nac.pc.in',
@@ -167,16 +160,16 @@ def version(ctx):
     # first, try to get a version string from git
     gotVersionFromGit = False
     try:
-        cmd = ['git', 'describe', '--always', '--match', '%s*' % GIT_TAG_PREFIX]
-        out = subprocess.check_output(cmd, universal_newlines=True).strip()
+        cmd = ['git', 'describe', '--always', '--match', f'{GIT_TAG_PREFIX}*']
+        out = subprocess.run(cmd, capture_output=True, check=True, text=True).stdout.strip()
         if out:
             gotVersionFromGit = True
             if out.startswith(GIT_TAG_PREFIX):
                 Context.g_module.VERSION = out.lstrip(GIT_TAG_PREFIX)
             else:
                 # no tags matched
-                Context.g_module.VERSION = '%s-commit-%s' % (VERSION_BASE, out)
-    except (OSError, subprocess.CalledProcessError):
+                Context.g_module.VERSION = f'{VERSION_BASE}-commit-{out}'
+    except (OSError, subprocess.SubprocessError):
         pass
 
     versionFile = ctx.path.find_node('VERSION.info')
@@ -194,14 +187,14 @@ def version(ctx):
                 # already up-to-date
                 return
         except EnvironmentError as e:
-            Logs.warn('%s exists but is not readable (%s)' % (versionFile, e.strerror))
+            Logs.warn(f'{versionFile} exists but is not readable ({e.strerror})')
     else:
         versionFile = ctx.path.make_node('VERSION.info')
 
     try:
         versionFile.write(Context.g_module.VERSION)
     except EnvironmentError as e:
-        Logs.warn('%s is not writable (%s)' % (versionFile, e.strerror))
+        Logs.warn(f'{versionFile} is not writable ({e.strerror})')
 
 def dist(ctx):
     ctx.algo = 'tar.xz'
