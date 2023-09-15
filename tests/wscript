@@ -8,4 +8,5 @@ def build(bld):
         name='unit-tests',
         source=bld.path.ant_glob('**/*.cpp'),
         use='BOOST_TESTS libndn-nac',
+        includes=top,
         install_path=None)

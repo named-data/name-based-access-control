@@ -20,7 +20,7 @@
 #ifndef NDN_NAC_COMMON_HPP
 #define NDN_NAC_COMMON_HPP
 
-#include "config.hpp"
+#include "detail/config.hpp"
 
 #ifdef NAC_WITH_TESTS
 #define NAC_VIRTUAL_WITH_TESTS virtual

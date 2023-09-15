@@ -67,7 +67,7 @@ def configure(conf):
     # or conf.define_cond().  Everything that was added directly to conf.env.DEFINES
     # will not appear in the config header, but will instead be passed directly to the
     # compiler on the command line.
-    conf.write_config_header('config.hpp', define_prefix='NAC_')
+    conf.write_config_header('src/detail/config.hpp', define_prefix='NAC_')
 
 def build(bld):
     version(bld)
@@ -93,8 +93,8 @@ def build(bld):
         cnum=VERSION_BASE,
         source=bld.path.ant_glob('src/**/*.cpp'),
         use='BOOST NDN_CXX',
-        includes=['src', '.'],
-        export_includes=['src', '.'])
+        includes='src',
+        export_includes='src')
 
     if bld.env.WITH_TESTS:
         bld.recurse('tests')
@@ -107,7 +107,7 @@ def build(bld):
 
     # Install header files
     bld.install_files('${INCLUDEDIR}/ndn-nac', bld.path.find_dir('src').ant_glob('*.hpp'))
-    bld.install_files('${INCLUDEDIR}/ndn-nac', bld.path.find_resource('config.hpp'))
+    bld.install_files('${INCLUDEDIR}/ndn-nac/detail', 'src/detail/config.hpp')
 
     bld(features='subst',
         source='libndn-nac.pc.in',
