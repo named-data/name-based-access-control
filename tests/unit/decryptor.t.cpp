@@ -27,9 +27,10 @@
 #include "tests/io-key-chain-fixture.hpp"
 #include "tests/unit/static-data.hpp"
 
-#include <boost/mpl/vector.hpp>
 #include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
+
+#include <boost/mp11/list.hpp>
 
 namespace ndn::nac::tests {
 
@@ -101,7 +102,7 @@ struct Invalid
   bool expectToSucceed = false;
 };
 
-using Identities = boost::mpl::vector<Valid, Invalid>;
+using Identities = boost::mp11::mp_list<Valid, Invalid>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(DecryptSuccess, T, Identities, DecryptorFixture<T>)
 {
