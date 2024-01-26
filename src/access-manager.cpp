@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -46,7 +46,7 @@ AccessManager::AccessManager(const Identity& identity, const Name& dataset,
 
   auto kekPrefix = Name(m_nacKey.getIdentity()).append(KEK);
 
-  auto kek = make_shared<Data>(m_nacKey.getDefaultCertificate());
+  auto kek = std::make_shared<Data>(m_nacKey.getDefaultCertificate());
   kek->setName(Name(kekPrefix).append(nacKeyId));
   kek->setFreshnessPeriod(DEFAULT_KEK_FRESHNESS_PERIOD);
   m_keyChain.sign(*kek, signingByIdentity(m_identity));
@@ -106,7 +106,7 @@ AccessManager::addMember(const Certificate& memberCert)
   content.setPayload(kdkData->wireEncode());
   content.setPayloadKey(memberKey.encrypt({secret, secretLength}));
 
-  auto kdk = make_shared<Data>(kdkName);
+  auto kdk = std::make_shared<Data>(kdkName);
   kdk->setContent(content.wireEncode());
   // FreshnessPeriod can serve as a soft access control for revoking access
   kdk->setFreshnessPeriod(DEFAULT_KDK_FRESHNESS_PERIOD);

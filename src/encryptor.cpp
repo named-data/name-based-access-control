@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -117,7 +117,7 @@ EncryptedContent
 Encryptor::encrypt(span<const uint8_t> data)
 {
   // Generate IV
-  auto iv = make_shared<Buffer>(AES_IV_SIZE);
+  auto iv = std::make_shared<Buffer>(AES_IV_SIZE);
   random::generateSecureBytes(*iv);
 
   OBufferStream os;
@@ -192,7 +192,7 @@ Encryptor::makeAndPublishCkData(const ErrorCallback& onFailure)
     EncryptedContent content;
     content.setPayload(kek.encrypt(m_ckBits));
 
-    auto ckData = make_shared<Data>(Name(m_ckName).append(ENCRYPTED_BY).append(m_kek->getName()));
+    auto ckData = std::make_shared<Data>(Name(m_ckName).append(ENCRYPTED_BY).append(m_kek->getName()));
     ckData->setContent(content.wireEncode());
     // FreshnessPeriod can serve as a soft access control for revoking access
     ckData->setFreshnessPeriod(DEFAULT_CK_FRESHNESS_PERIOD);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -41,10 +41,10 @@ public:
   {
     StaticData data;
     for (const auto& block : data.managerPackets) {
-      m_ims.insert(*make_shared<Data>(block));
+      m_ims.insert(*std::make_shared<Data>(block));
     }
     for (const auto& block : data.encryptorPackets) {
-      m_ims.insert(*make_shared<Data>(block));
+      m_ims.insert(*std::make_shared<Data>(block));
     }
 
     auto serveFromIms = [this] (const Name&, const Interest& interest) {

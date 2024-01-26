@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -73,8 +73,8 @@ private:
   }
 
 protected:
-  shared_ptr<time::UnitTestSteadyClock> m_steadyClock;
-  shared_ptr<time::UnitTestSystemClock> m_systemClock;
+  std::shared_ptr<time::UnitTestSteadyClock> m_steadyClock;
+  std::shared_ptr<time::UnitTestSystemClock> m_systemClock;
 };
 
 } // namespace ndn::nac::tests

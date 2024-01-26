@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * This file is part of NAC (Name-Based Access Control for NDN).
  * See AUTHORS.md for complete list of NAC authors and contributors.
@@ -35,7 +35,7 @@ public:
 public:
   EncryptedContent content;
   Block randomBlock = "01 03 000000"_block;
-  ConstBufferPtr randomBuffer = make_shared<const Buffer>(10);
+  ConstBufferPtr randomBuffer = std::make_shared<const Buffer>(10);
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestEncryptedContent, EncryptedContentFixture)

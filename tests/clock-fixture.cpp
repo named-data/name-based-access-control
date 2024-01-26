@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -22,8 +22,8 @@
 namespace ndn::nac::tests {
 
 ClockFixture::ClockFixture()
-  : m_steadyClock(make_shared<time::UnitTestSteadyClock>())
-  , m_systemClock(make_shared<time::UnitTestSystemClock>())
+  : m_steadyClock(std::make_shared<time::UnitTestSteadyClock>())
+  , m_systemClock(std::make_shared<time::UnitTestSystemClock>())
 {
   time::setCustomClocks(m_steadyClock, m_systemClock);
 }
