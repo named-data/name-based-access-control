@@ -198,11 +198,12 @@ BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
 
 BOOST_AUTO_TEST_CASE(GenerateTestData,
   * ut::description("regenerates the static test data used by other test cases")
-  * ut::disabled())
+  * ut::disabled()
+  * ut::label("generator"))
 {
   const auto plaintext = "Data to encrypt"s;
 
-  std::cerr << "const std::vector<Block> encryptedBlobs = {\n";
+  std::cerr << "const std::vector<Block> encryptedBlobs{\n";
   for (size_t i = 0; i < 3; ++i) {
     std::cerr << "  \"";
     auto block = encryptor.encrypt({reinterpret_cast<const uint8_t*>(plaintext.data()), plaintext.size()});
@@ -212,15 +213,15 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
     encryptor.regenerateCk();
     advanceClocks(1_ms, 10);
   }
-  std::cerr << "};\n\n";
+  std::cerr << "};\n";
 
-  std::cerr << "const std::vector<Block> encryptorPackets = {\n";
+  std::cerr << "const std::vector<Block> encryptorPackets{\n";
   for (const auto& data : encryptor) {
     std::cerr << "  \"";
     printHex(std::cerr, data.wireEncode(), true);
     std::cerr << "\"_block,\n";
   }
-  std::cerr << "};\n\n";
+  std::cerr << "};\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()

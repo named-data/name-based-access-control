@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023, Regents of the University of California
+ * Copyright (c) 2014-2024, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -22,9 +22,10 @@
 #include "tests/boost-test.hpp"
 #include "tests/io-key-chain-fixture.hpp"
 
-#include <iostream>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/util/string-helper.hpp>
+
+#include <iostream>
 
 namespace ndn::nac::tests {
 
@@ -104,15 +105,16 @@ BOOST_AUTO_TEST_CASE(EnumerateDataFromIms)
 
 BOOST_AUTO_TEST_CASE(GenerateTestData,
   * ut::description("regenerates the static test data used by other test cases")
-  * ut::disabled())
+  * ut::disabled()
+  * ut::label("generator"))
 {
   std::cerr << "const Block nacIdentity = \"";
   auto block = m_keyChain.exportSafeBag(nacIdentity.getDefaultKey().getDefaultCertificate(),
                                         "password", strlen("password"))->wireEncode();
   printHex(std::cerr, block, true);
-  std::cerr << "\"_block;\n\n";
+  std::cerr << "\"_block;\n";
 
-  std::cerr << "const std::vector<Block> userIdentities = {\n";
+  std::cerr << "const std::vector<Block> userIdentities{\n";
   for (const auto& userId : userIdentities) {
     std::cerr << "  \"";
     block = m_keyChain.exportSafeBag(userId.getDefaultKey().getDefaultCertificate(),
@@ -120,15 +122,15 @@ BOOST_AUTO_TEST_CASE(GenerateTestData,
     printHex(std::cerr, block, true);
     std::cerr << "\"_block,\n";
   }
-  std::cerr << "};\n\n";
+  std::cerr << "};\n";
 
-  std::cerr << "const std::vector<Block> managerPackets = {\n";
+  std::cerr << "const std::vector<Block> managerPackets{\n";
   for (const auto& data : manager) {
     std::cerr << "  \"";
     printHex(std::cerr, data.wireEncode(), true);
     std::cerr << "\"_block,\n";
   }
-  std::cerr << "};\n\n";
+  std::cerr << "};\n";
 }
 
 BOOST_AUTO_TEST_SUITE_END()
