@@ -19,4 +19,4 @@ https://github.com/named-data/.github/blob/main/CONTRIBUTING.md) to get started.
 ## License
 
 NAC is free software distributed under the GNU Lesser General Public License version 3.
-See [`COPYING.md`](COPYING.md) for details.
+See [`COPYING.md`](COPYING.md) and [`COPYING.lesser`](COPYING.lesser) for details.

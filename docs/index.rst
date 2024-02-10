@@ -23,4 +23,5 @@ License
 -------
 
 NAC is an open source project licensed under the LGPL version 3. For more information about
-the license, refer to `COPYING.md <https://github.com/named-data/name-based-access-control/blob/new/COPYING.md>`__.
+the license, refer to `COPYING.md <https://github.com/named-data/name-based-access-control/blob/new/COPYING.md>`__
+and `COPYING.lesser <https://github.com/named-data/name-based-access-control/blob/new/COPYING.lesser>`__.
