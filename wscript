@@ -117,7 +117,7 @@ def build(bld):
         source='libndn-nac.pc.in',
         target='libndn-nac.pc',
         install_path='${LIBDIR}/pkgconfig',
-        VERSION=VERSION)
+        VERSION=VERSION_BASE)
 
 def docs(bld):
     from waflib import Options

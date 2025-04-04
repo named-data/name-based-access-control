@@ -35,6 +35,7 @@ genhtml \
     --quiet \
     --branch-coverage \
     --demangle-cpp \
+    --flat \
     --legend \
     --missed \
     --show-proportion \
