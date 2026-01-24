@@ -3,7 +3,7 @@ libdir=@LIBDIR@
 includedir=@INCLUDEDIR@
 
 Name: libndn-nac
-Description: NDN Name-Based Access Control library
+Description: NDN Name-Based Access Control Library
 Version: @VERSION@
 Libs: -L${libdir} -lndn-nac
 Cflags: -I${includedir}
