@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023, Regents of the University of California
+ * Copyright (c) 2014-2026, Regents of the University of California
  *
  * NAC library is free software: you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License as published by the Free Software
@@ -89,17 +89,20 @@ nac_add_member(int argc, char** argv)
 
     auto kdk = manager.addMember(cert);
 
-    if (output == "-")
-      io::save(kdk, std::cout);
-    else
-      io::save(kdk, output);
-
-    return 0;
+    if (output == "-") {
+      io::saveTlv(kdk, std::cout);
+    }
+    else {
+      std::ofstream file(output);
+      io::saveTlv(kdk, file);
+    }
   }
   catch (const std::runtime_error& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return 1;
   }
+
+  return 0;
 }
 
 } // namespace ndn::nac
